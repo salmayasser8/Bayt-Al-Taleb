@@ -51,7 +51,7 @@ const HeroSection: React.FC = () => {
 
         <motion.p
           variants={fadeUp}
-          className="text-lg md:text-xl mx-auto mb-10 font-semibold text-paragraph max-w-2xl"
+          className="text-lg md:text-xl mx-auto mb-10 font-semibold text-paragraph max-w-xl"
         >
           نصل الطلاب العرب بالإرشاد الأكاديمي الموثوق لمستقبل تعليمي أفضل وبناء
           مهني متميز
@@ -61,8 +61,8 @@ const HeroSection: React.FC = () => {
           variants={fadeUp}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Button className="w-full sm:w-auto">🎓 استكشف التخصصات</Button>
-          <Button className="w-full sm:w-auto  ">💰 تصفح المنح</Button>
+          <Button className=" sm:w-auto">🎓 استكشف التخصصات</Button>
+          <Button className=" sm:w-auto  ">💰 تصفح المنح</Button>
         </motion.div>
       </motion.div>
     </section>

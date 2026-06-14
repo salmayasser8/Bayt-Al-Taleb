@@ -108,16 +108,17 @@ const Footer: React.FC = () => {
             <h5 className="font-bold mb-4 text-paragraph text-lg">تابعنا</h5>
             <div className="flex gap-4 justify-center md:justify-start">
               <Link
-                to="#"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-accent bg-primary  "
-              >
-                <FaPhoneAlt size={20} />
-              </Link>
-              <Link
-                to="#"
-                className="flex items-center justify-center w-10 h-10 rounded-full bg-muted text-accent  bg-primary  "
+                to="mailto:info@baitaltalib.com"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-accent"
               >
                 <IoIosMail size={20} />
+              </Link>
+
+              <Link
+                to="tel:+201234567890"
+                className="flex items-center justify-center w-10 h-10 rounded-full bg-primary text-accent"
+              >
+                <FaPhoneAlt size={20} />
               </Link>
             </div>
           </motion.div>
