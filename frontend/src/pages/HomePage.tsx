@@ -1,11 +1,18 @@
-/** Placeholder landing page for authenticated users. Replace with the dashboard. */
+import HeroSection from "../components/sections/Home/HeroSection";
+import StatsBar from "../components/sections/Home/StatsBar";
+import HowItWorks from "../components/sections/Home/HowItWorks";
+import FeaturedSection from "../components/sections/Home/Featured";
+import Categories from "../components/sections/Home/Categories";
+const HomePage = () => {
+  return (
+    <>
+      <HeroSection />
+      <StatsBar />
+      <HowItWorks />
+      <FeaturedSection />
+      <Categories />
+    </>
+  );
+};
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: frontend/src/pages/HomePage.tsx
-// Expected exports: HomePage
-//
-// TODO: implement.
-
-export {};
+export default HomePage;

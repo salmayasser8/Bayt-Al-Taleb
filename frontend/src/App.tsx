@@ -1,15 +1,7 @@
-/**
- * Provider composition (outer → inner):
- *   ErrorBoundary → QueryClientProvider → AuthProvider → RouterProvider
- * Toaster is mounted alongside the router so toasts render over any route.
- */
+import MainLayout from "./layouts/AppLayout";
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: frontend/src/App.tsx
-// Expected exports: App
-//
-// TODO: implement.
+function App() {
+  return <MainLayout />;
+}
 
-export {};
+export default App;

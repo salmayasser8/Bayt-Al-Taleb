@@ -1,15 +1,19 @@
-/**
- * Shell for the authenticated app: a top bar with the user/role and a logout
- * button, plus an <Outlet> for the routed page. Business navigation gets added
- * here later — this is the foundation only.
- */
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import SharedLayout from "./AuthLayout";
+import Home from "../pages/HomePage";
+const MainLayout = () => {
+  return (
+    <>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<SharedLayout />}>
+            <Route index element={<Home />} />
+          </Route>
+          {/* <Route path="*" element={<NotFound />} /> */}
+        </Routes>
+      </BrowserRouter>
+    </>
+  );
+};
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: frontend/src/layouts/AppLayout.tsx
-// Expected exports: AppLayout
-//
-// TODO: implement.
-
-export {};
+export default MainLayout;

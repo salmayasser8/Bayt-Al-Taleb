@@ -1,11 +1,14 @@
-/** Centered shell for public auth pages (login, register). */
+import { Outlet } from "react-router-dom";
+import Navbar from "../components/common/Navbar";
+import Footer from "../components/common/Footer";
+const SharedLayout = () => {
+  return (
+    <>
+      <Navbar />
+      <Outlet />
+      <Footer />
+    </>
+  );
+};
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: frontend/src/layouts/AuthLayout.tsx
-// Expected exports: AuthLayout
-//
-// TODO: implement.
-
-export {};
+export default SharedLayout;
