@@ -73,9 +73,9 @@ const Navbar: React.FC = () => {
         </div>
 
         {/* BUTTON (always visible) */}
-        <div className="hidden lg:block">
+        <Link to="/auth" className="hidden lg:block">
           <Button>تسجيل الدخول</Button>
-        </div>
+        </Link>
 
         {/* BURGER Mobile */}
         <button

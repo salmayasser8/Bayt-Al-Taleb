@@ -1,19 +1,21 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import SharedLayout from "./AuthLayout";
+import AuthLayout from "./AuthLayout";
 import Home from "../pages/HomePage";
-const MainLayout = () => {
+import Auth from "../pages/AuthPage";
+const AppLayout = () => {
   return (
     <>
       <BrowserRouter>
         <Routes>
-          <Route path="/" element={<SharedLayout />}>
+          <Route path="/" element={<AuthLayout />}>
             <Route index element={<Home />} />
           </Route>
           {/* <Route path="*" element={<NotFound />} /> */}
+          <Route path="/auth" element={<Auth />} />
         </Routes>
       </BrowserRouter>
     </>
   );
 };
 
-export default MainLayout;
+export default AppLayout;

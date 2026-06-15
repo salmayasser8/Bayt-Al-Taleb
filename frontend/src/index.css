@@ -16,15 +16,13 @@
 @layer base {
   :root {
     --primary: 238 98% 20%;
-    /* --background: hsl(228 100% 98%); */
-    --background: 228 100% 98%;
+    --secondary: hsl(263 48% 19%); /* #f5f7ff */
     --bgSection: 226 70% 98%;
     --paragraph: 44 38% 94%;
     --bgDark: 240 54% 11%; /* #0d0d2b */
     --accent: 41 100% 47%; /* #f0a500 */
     --card-foreground: hsl(240 54% 11%); /* #0d0d2b */
     --primary-foreground: hsl(0 0% 100%); /* #ffffff */
-    --secondary: hsl(263 48% 19%); /* #f5f7ff */
     --secondary-foreground: hsl(240 54% 11%);
     --muted: hsl(0 10% 86%); /* #e0d9d9 */
     --muted-foreground: hsl(220 9% 46%);
