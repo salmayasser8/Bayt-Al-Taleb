@@ -12,6 +12,7 @@ const links: NavLink[] = [
   { label: "الرئيسية", to: "/" },
   { label: "من نحن", to: "/about" },
   { label: "تواصل معنا", to: "/contact" },
+  { label: "التخصصات", to: "/colleges" },
 ];
 
 const navVariants: Variants = {
