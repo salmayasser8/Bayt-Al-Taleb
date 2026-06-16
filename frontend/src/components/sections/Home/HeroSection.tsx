@@ -1,6 +1,7 @@
 import React from "react";
 import { motion, Variants } from "framer-motion";
 import Button from "../.././common/Button";
+import { Link } from "react-router-dom";
 
 const container: Variants = {
   hidden: {},
@@ -61,8 +62,12 @@ const HeroSection: React.FC = () => {
           variants={fadeUp}
           className="flex flex-col sm:flex-row gap-4 justify-center items-center"
         >
-          <Button className=" sm:w-auto">🎓 استكشف التخصصات</Button>
-          <Button className=" sm:w-auto  ">💰 تصفح المنح</Button>
+          <Link to="/colleges">
+            <Button className=" sm:w-auto">🎓 استكشف التخصصات</Button>
+          </Link>
+          <Link to="/scholarships">
+            <Button className=" sm:w-auto">💰 تصفح المنح</Button>
+          </Link>
         </motion.div>
       </motion.div>
     </section>

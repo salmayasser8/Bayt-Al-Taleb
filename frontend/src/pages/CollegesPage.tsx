@@ -161,8 +161,6 @@ const CollegeCard: React.FC<{ college: College }> = ({ college }) => (
   </motion.div>
 );
 
-// ── Main Page ─────────────────────────────────────────────────────────
-
 const CollegesPage: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("الكل");
@@ -194,7 +192,6 @@ const CollegesPage: React.FC = () => {
           الذي يناسب طموحاتك
         </p>
       </motion.div>
-
       <div className="container py-10  ">
         {/* Search + Filter */}
         <motion.div

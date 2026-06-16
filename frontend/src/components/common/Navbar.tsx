@@ -5,16 +5,15 @@ import Button from "./Button";
 
 interface NavLink {
   label: string;
-  to: string;
+  path: string;
 }
 
 const links: NavLink[] = [
-  { label: "الرئيسية", to: "/" },
-  { label: "من نحن", to: "/about" },
-  { label: "تواصل معنا", to: "/contact" },
-  { label: "التخصصات", to: "/colleges" },
+  { label: "الرئيسية", path: "/" },
+  { label: "من نحن", path: "/about" },
+  { label: "تواصل معنا", path: "/contact" },
+  { label: "التخصصات", path: "/colleges" },
 ];
-
 const navVariants: Variants = {
   hidden: { y: -80, opacity: 0 },
   visible: {
@@ -63,7 +62,7 @@ const Navbar: React.FC = () => {
             {links.map((item) => (
               <motion.li key={item.label} variants={linkItem}>
                 <Link
-                  to={item.to}
+                  to={item.path}
                   className="text-paragraph hover:text-accent transition-colors text-lg no-underline font-semibold"
                 >
                   {item.label}
@@ -121,7 +120,7 @@ const Navbar: React.FC = () => {
               {links.map((item) => (
                 <li key={item.label}>
                   <Link
-                    to={item.to}
+                    to={item.path}
                     className="text-paragraph hover:text-accent transition-colors text-lg no-underline font-medium"
                     onClick={() => setIsOpen(false)}
                   >
@@ -130,7 +129,9 @@ const Navbar: React.FC = () => {
                 </li>
               ))}
               <li>
-                <Button>تسجيل الدخول</Button>
+                <Link to="/auth">
+                  <Button>تسجيل الدخول</Button>
+                </Link>
               </li>
             </ul>
           </motion.div>
