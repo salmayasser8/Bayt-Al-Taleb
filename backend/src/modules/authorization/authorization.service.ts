@@ -22,4 +22,4 @@
 //
 // TODO: implement.
 
-export {};
+export { };

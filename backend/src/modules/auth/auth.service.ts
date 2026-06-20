@@ -19,4 +19,4 @@
 //
 // TODO: implement.
 
-export {};
+export { };
