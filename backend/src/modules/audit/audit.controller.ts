@@ -9,16 +9,15 @@ export class AuditController {
   constructor(private readonly service: AuditService) {}
 
   list = asyncHandler(async (req: Request, res: Response) => {
-    const { entityType, entityId, action, userId, page, pageSize } =
-      req.query as unknown as ListAuditQuery;
+    const query = req.query as unknown as ListAuditQuery;
 
     const filter: AuditLogFilter = {};
-    if (entityType != null) filter.entityType = entityType;
-    if (entityId != null) filter.entityId = entityId;
-    if (action != null) filter.action = action;
-    if (userId != null) filter.userId = userId;
+    if (query.entityType != null) filter.entityType = query.entityType;
+    if (query.entityId   != null) filter.entityId   = query.entityId;
+    if (query.action     != null) filter.action      = query.action;
+    if (query.userId     != null) filter.userId      = query.userId;
 
-    const result = await this.service.list(filter, page, pageSize);
+    const result = await this.service.list(filter, query.page, query.pageSize);
     paginated(res, result);
   });
 }
