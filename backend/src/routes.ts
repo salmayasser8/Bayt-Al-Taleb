@@ -2,6 +2,7 @@ import { Router } from 'express';
 import type { Container } from './container.js';
 import { createAuthRouter } from './modules/auth/auth.routes.js';
 import { createUsersRouter } from './modules/users/users.routes.js';
+import { createRolesRouter } from './modules/roles/roles.routes.js';
 
 /**
  * Builds the versioned API router (/api/v1).
@@ -12,8 +13,9 @@ export function createApiRouter(container: Container): Router {
 
   router.use('/auth', createAuthRouter(container.authController));
   router.use('/users', createUsersRouter(container.usersController, container.tokenService));
+  router.use('/roles', createRolesRouter(container.rolesController, container.tokenService));
+
   // TODO: mount remaining modules as implemented
-  // router.use('/roles',        createRolesRouter(container.rolesController));
   // router.use('/majors',       createMajorsRouter(container.majorsController));
   // router.use('/scholarships', createScholarshipsRouter(container.scholarshipsController));
   // router.use('/files',        createFilesRouter(container.filesController));

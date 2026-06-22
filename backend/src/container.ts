@@ -11,10 +11,15 @@ import { UsersRepository } from './modules/users/users.repository.js';
 import { UsersService }    from './modules/users/users.service.js';
 import { UsersController } from './modules/users/users.controller.js';
 
+import { RolesRepository } from './modules/roles/roles.repository.js';
+import { RolesService }    from './modules/roles/roles.service.js';
+import { RolesController } from './modules/roles/roles.controller.js';
+
 export interface Container {
-  authController: AuthController;
+  authController:  AuthController;
   usersController: UsersController;
-  tokenService: JwtTokenService;
+  rolesController: RolesController;
+  tokenService:    JwtTokenService;
 }
 
 export function buildContainer(): Container {
@@ -38,5 +43,10 @@ export function buildContainer(): Container {
   const usersService    = new UsersService(usersRepo, hasher);
   const usersController = new UsersController(usersService);
 
-  return { authController, usersController, tokenService };
+  // Roles
+  const rolesRepo       = new RolesRepository(prisma);
+  const rolesService    = new RolesService(rolesRepo);
+  const rolesController = new RolesController(rolesService);
+
+  return { authController, usersController, rolesController, tokenService };
 }
