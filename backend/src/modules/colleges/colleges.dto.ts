@@ -1,9 +1,15 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/colleges/colleges.dto.ts
-// Expected exports: CollegeDto
-//
-// TODO: implement.
+import type { CollegeView } from './colleges.types.js';
 
-export {};
+export interface CollegeDto {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export function toDto(view: CollegeView): CollegeDto {
+  return view;
+}

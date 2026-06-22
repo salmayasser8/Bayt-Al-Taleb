@@ -1,9 +1,15 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/majors/majors.dto.ts
-// Expected exports: MajorDto
-//
-// TODO: implement.
+import type { MajorView } from './majors.types.js';
 
-export {};
+export interface MajorDto {
+  id: string;
+  slug: string;
+  name: string;
+  isActive: boolean;
+  collegeId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export function toDto(view: MajorView): MajorDto {
+  return view;
+}

@@ -1,16 +1,70 @@
-/**
- * CollegesService — manages college identity/metadata and exposes a college's
- * majors. Content (sections/FAQs) is NEVER attached to colleges; it stays on
- * majors. Listing a college's majors delegates to MajorsService so all major
- * rules (soft-delete exclusion, views) are reused — no duplicate query logic.
- */
+import { ConflictError, NotFoundError } from '../../shared/errors/app-error.js';
+import type { Paginated } from '../../shared/types/index.js';
+import type { MajorView } from '../majors/majors.types.js';
+import type { MajorsService } from '../majors/majors.service.js';
+import type { CollegesRepository } from './colleges.repository.js';
+import type { CollegeView } from './colleges.types.js';
+import type { CreateCollegeInput, UpdateCollegeInput } from './colleges.validation.js';
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/colleges/colleges.service.ts
-// Expected exports: CollegesService
-//
-// TODO: implement.
+export class CollegesService {
+  constructor(
+    private readonly repo: CollegesRepository,
+    private readonly majors: MajorsService,
+  ) {}
 
-export {};
+  async create(input: CreateCollegeInput): Promise<CollegeView> {
+    return this.repo.create({
+      ...input,
+      description: input.description ?? null,
+      isActive: input.isActive ?? true,
+    });
+  }
+
+  async getById(id: string): Promise<CollegeView> {
+    const college = await this.repo.findById(id);
+    if (!college) {
+      throw new NotFoundError('College not found');
+    }
+    return college;
+  }
+
+  async list(page: number, pageSize: number): Promise<Paginated<CollegeView>> {
+    const { items, total } = await this.repo.list(page, pageSize);
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+
+  async update(id: string, data: UpdateCollegeInput): Promise<CollegeView> {
+    await this.getById(id);
+    return this.repo.update(id, data);
+  }
+
+  async delete(id: string): Promise<void> {
+    await this.getById(id);
+    
+    const majorsCount = await this.repo.countMajors(id);
+    if (majorsCount > 0) {
+      throw new ConflictError('College still has majors');
+    }
+
+    await this.repo.delete(id);
+  }
+
+  async listMajors(collegeId: string, page: number, pageSize: number): Promise<Paginated<MajorView>> {
+    await this.getById(collegeId);
+    
+    const { items, total } = await this.majors.listByCollege(collegeId, page, pageSize);
+    return {
+      items,
+      total,
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
+    };
+  }
+}
