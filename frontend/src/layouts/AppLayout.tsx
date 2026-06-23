@@ -3,8 +3,13 @@ import AuthLayout from "./AuthLayout";
 import Home from "../pages/HomePage";
 import Auth from "../pages/AuthPage";
 import CollegesPage from "../pages/CollegesPage";
-import ScrollToTop from "../components/common/ScrollToTop";
 import CollegeDetailPage from "../pages/CollegeDetailPage";
+import ScrollToTop from "../components/common/ScrollToTop";
+import StudentDashboard from "../pages/StudentDashboard";
+import UploadFile from "../pages/UploadFile";
+import SupervisorReview from "../pages/SupervisorReview";
+import AdminPanel from "../pages/AdminPanel";
+
 const AppLayout = () => {
   return (
     <>
@@ -15,8 +20,11 @@ const AppLayout = () => {
             <Route index element={<Home />} />
             <Route path="/colleges" element={<CollegesPage />} />
             <Route path="/colleges/:id" element={<CollegeDetailPage />} />
+            <Route path="/dashboard" element={<StudentDashboard />} />
+            <Route path="/upload" element={<UploadFile />} />
+            <Route path="/supervisor" element={<SupervisorReview />} />
+            <Route path="/admin" element={<AdminPanel />} />
           </Route>
-          {/* <Route path="*" element={<NotFound />} /> */}
           <Route path="/auth" element={<Auth />} />
         </Routes>
       </BrowserRouter>
