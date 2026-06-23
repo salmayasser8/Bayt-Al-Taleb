@@ -1,12 +1,7 @@
 import { PrismaClient, RoleName } from '@prisma/client';
 import { ROLE_PERMISSIONS, ALL_PERMISSIONS } from '../src/shared/rbac/permissions.js';
+import bcrypt from 'bcryptjs';
 
-/**
- * Seeds the canonical roles and their permission grants.
- * Idempotent: safe to run repeatedly (upserts everything).
- *
- *   npx prisma db seed
- */
 const prisma = new PrismaClient();
 
 async function main() {
@@ -38,8 +33,25 @@ async function main() {
     }
   }
 
+  // 3. Seed default admin users
+  const defaultUsers = [
+    { email: 'superadmin@bayt.com', password: 'SuperAdmin@123', fullName: 'Super Admin', roleName: RoleName.SUPER_ADMIN },
+    { email: 'admin@bayt.com',      password: 'Admin@123',      fullName: 'Admin User',  roleName: RoleName.ADMIN },
+    { email: 'moderator@bayt.com',  password: 'Moderator@123',  fullName: 'Moderator',   roleName: RoleName.MODERATOR },
+  ];
+
+  for (const u of defaultUsers) {
+    const role = await prisma.role.findUniqueOrThrow({ where: { name: u.roleName } });
+    const passwordHash = await bcrypt.hash(u.password, 12);
+    await prisma.user.upsert({
+      where: { email: u.email },
+      update: {},
+      create: { email: u.email, passwordHash, fullName: u.fullName, roleId: role.id },
+    });
+  }
+
   // eslint-disable-next-line no-console
-  console.log('✅ Seed complete: roles & permissions provisioned.');
+  console.log('✅ Seed complete: roles, permissions & default users provisioned.');
 }
 
 main()

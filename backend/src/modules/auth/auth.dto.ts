@@ -1,11 +1,18 @@
 /** Response DTOs for the Auth module (what the API returns to clients). */
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/auth/auth.dto.ts
-// Expected exports: AuthUserDto, TokenPairDto, AuthResponseDto
-//
-// TODO: implement.
+export interface AuthUserDto {
+  id: string;
+  email: string;
+  fullName: string;
+  role: string;
+}
 
-export {};
+export interface TokenPairDto {
+  accessToken: string;
+  refreshToken: string;
+}
+
+export interface AuthResponseDto {
+  user: AuthUserDto;
+  tokens: TokenPairDto;
+}

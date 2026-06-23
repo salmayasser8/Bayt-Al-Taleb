@@ -1,9 +1,8 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/roles/roles.dto.ts
-// Expected exports: RoleDto
-//
-// TODO: implement.
+import type { RoleName } from '@prisma/client';
 
-export {};
+export interface RoleDto {
+  id: string;
+  name: RoleName;
+  description: string | null;
+  createdAt: Date;
+}
