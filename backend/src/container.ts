@@ -15,11 +15,16 @@ import { RolesRepository } from './modules/roles/roles.repository.js';
 import { RolesService }    from './modules/roles/roles.service.js';
 import { RolesController } from './modules/roles/roles.controller.js';
 
+import { ScholarshipsRepository } from './modules/scholarships/scholarships.repository.js';
+import { ScholarshipsService }    from './modules/scholarships/scholarships.service.js';
+import { ScholarshipsController } from './modules/scholarships/scholarships.controller.js';
+
 export interface Container {
-  authController:  AuthController;
-  usersController: UsersController;
-  rolesController: RolesController;
-  tokenService:    JwtTokenService;
+  authController:         AuthController;
+  usersController:        UsersController;
+  rolesController:        RolesController;
+  scholarshipsController: ScholarshipsController;
+  tokenService:           JwtTokenService;
 }
 
 export function buildContainer(): Container {
@@ -48,5 +53,16 @@ export function buildContainer(): Container {
   const rolesService    = new RolesService(rolesRepo);
   const rolesController = new RolesController(rolesService);
 
-  return { authController, usersController, rolesController, tokenService };
+  // Scholarships
+  const scholarshipsRepo       = new ScholarshipsRepository(prisma);
+  const scholarshipsService    = new ScholarshipsService(scholarshipsRepo);
+  const scholarshipsController = new ScholarshipsController(scholarshipsService);
+
+  return {
+    authController,
+    usersController,
+    rolesController,
+    scholarshipsController,
+    tokenService,
+  };
 }
