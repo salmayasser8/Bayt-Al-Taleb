@@ -14,7 +14,8 @@ export class CollegesService {
 
   async create(input: CreateCollegeInput): Promise<CollegeView> {
     return this.repo.create({
-      ...input,
+      slug: input.slug,
+      name: input.name,
       description: input.description ?? null,
       isActive: input.isActive ?? true,
     });
