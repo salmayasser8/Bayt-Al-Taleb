@@ -1,9 +1,19 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/scholarships/scholarships.types.ts
-// Expected exports: ScholarshipView, CreateScholarshipData, UpdateScholarshipData
-//
-// TODO: implement.
+export interface ScholarshipView {
+  id: string;
+  slug: string;
+  name: string;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export {};
+export interface CreateScholarshipData {
+  slug: string;
+  name: string;
+}
+
+export interface UpdateScholarshipData {
+  slug?: string;
+  name?: string;
+  isActive?: boolean;
+}

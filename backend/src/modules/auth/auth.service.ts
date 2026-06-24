@@ -1,11 +1,6 @@
 import crypto from 'crypto';
 import type { AuthRepository } from './auth.repository.js';
-import type {
-  TokenService,
-  PasswordHasher,
-  AuthResult,
-  RefreshTokenPayload,
-} from './auth.types.js';
+import type { TokenService, PasswordHasher, AuthResult, RefreshTokenPayload } from './auth.types.js';
 import type { RegisterInput, LoginInput, RefreshInput, LogoutInput } from './auth.validation.js';
 import { ConflictError, UnauthorizedError } from '../../shared/errors/app-error.js';
 import { RoleName } from '@prisma/client';
@@ -13,30 +8,21 @@ import { RoleName } from '@prisma/client';
 /**
  * AuthService — owns ALL authentication business logic.
  *
- * Dependencies (repository, hasher, token service) are injected, so the
- * service is unit-testable with mocks and contains no framework or I/O
- * coupling beyond those interfaces. Controllers stay thin and just call these.
- *
- * Refresh-token strategy: we sign a JWT refresh token whose `jti` is a random
- * id; we persist only a SHA-256 hash of the signed token. On refresh we verify
- * the JWT, look up its hash, ensure it is not revoked/expired, rotate it
- * (revoke old, issue new). This enables server-side logout & theft detection.
+ * Refresh-token strategy:
+ *   - Sign a JWT whose `jti` is a random UUID.
+ *   - Persist only SHA-256(signedToken) in the DB.
+ *   - On refresh: verify JWT → look up hash → check not revoked/expired →
+ *     revoke old → issue new pair. Enables server-side logout & theft detection.
  */
 export class AuthService {
   constructor(
     private readonly repo: AuthRepository,
     private readonly hasher: PasswordHasher,
     private readonly tokenService: TokenService,
-    private readonly refreshTtlMs: number, // e.g. 7 * 24 * 60 * 60 * 1000
+    private readonly refreshTtlMs: number,   // e.g. 7 * 24 * 60 * 60 * 1000
   ) {}
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/auth/auth.service.ts
-// Expected exports: AuthService
-//
-// TODO: implement.
+  // ─── Register ────────────────────────────────────────────────
 
   async register(input: RegisterInput): Promise<AuthResult> {
     const existing = await this.repo.findUserByEmail(input.email);
@@ -67,12 +53,7 @@ export class AuthService {
   // ─── Login ───────────────────────────────────────────────────
 
   async login(input: LoginInput): Promise<AuthResult> {
-    console.log('LOGIN SERVICE START');
-
     const user = await this.repo.findUserByEmail(input.email);
-
-    console.log('USER:', user);
-
     if (!user) throw new UnauthorizedError('Invalid email or password');
 
     const valid = await this.hasher.compare(input.password, user.passwordHash);
@@ -131,7 +112,7 @@ export class AuthService {
   async #issueTokenPair(userId: string, email: string, role: string) {
     const jti = crypto.randomUUID();
 
-    const accessToken = this.tokenService.signAccess({ sub: userId, email, role });
+    const accessToken  = this.tokenService.signAccess({ sub: userId, email, role });
     const refreshToken = this.tokenService.signRefresh({ sub: userId, jti });
 
     const tokenHash = this.#hashToken(refreshToken);

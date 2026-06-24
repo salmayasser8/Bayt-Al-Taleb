@@ -25,8 +25,8 @@ export function authenticate(tokenService: TokenService): RequestHandler {
       req.user = {
         id: payload.sub,
         email: payload.email,
-        role: payload.role,
-        permissions: permissionsForRole(payload.role),
+        role: payload.role as import('@prisma/client').RoleName,
+       permissions: permissionsForRole(payload.role as import('@prisma/client').RoleName),
       };
       next();
     } catch {
@@ -49,8 +49,8 @@ export function optionalAuthenticate(tokenService: TokenService): RequestHandler
       req.user = {
         id: payload.sub,
         email: payload.email,
-        role: payload.role,
-        permissions: permissionsForRole(payload.role),
+       role: payload.role as import('@prisma/client').RoleName,
+       permissions: permissionsForRole(payload.role as import('@prisma/client').RoleName),
       };
     } catch {
       // ignore — treat as anonymous

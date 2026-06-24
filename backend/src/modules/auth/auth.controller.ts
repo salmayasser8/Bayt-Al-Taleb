@@ -34,7 +34,6 @@ export class AuthController {
   });
 
   login = asyncHandler(async (req: Request, res: Response) => {
-    console.log('LOGIN CONTROLLER HIT');
     const input = req.body as LoginInput;
     const result = await this.service.login(input);
     const dto: AuthResponseDto = { user: result.user, tokens: result.tokens };
