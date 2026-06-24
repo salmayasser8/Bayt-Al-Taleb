@@ -1,6 +1,6 @@
 import { PrismaClient, RoleName } from '@prisma/client';
 import { ROLE_PERMISSIONS, ALL_PERMISSIONS } from '../src/shared/rbac/permissions.js';
-import bcrypt from 'bcrypt';
+import bcrypt from 'bcryptjs';
 
 /**
  * Seeds the canonical roles and their permission grants.
