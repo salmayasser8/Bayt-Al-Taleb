@@ -29,7 +29,7 @@
     "search:indexes": "prisma db execute --file prisma/sql/001_search_indexes.sql --schema prisma/schema.prisma"
   },
   "dependencies": {
-    "@prisma/client": "^5.22.0",
+    "@prisma/client": "^6.19.3",
     "bcryptjs": "^2.4.3",
     "cors": "^2.8.5",
     "dotenv": "^16.4.5",
@@ -39,6 +39,7 @@
     "multer": "^2.1.1",
     "pino": "^9.5.0",
     "pino-http": "^10.3.0",
+    "prisma": "^6.19.3",
     "swagger-ui-express": "^5.0.1",
     "yamljs": "^0.3.0",
     "zod": "^3.23.8"
@@ -60,7 +61,6 @@
     "eslint": "^9.14.0",
     "pino-pretty": "^11.3.0",
     "prettier": "^3.3.3",
-    "prisma": "^5.22.0",
     "supertest": "^7.0.0",
     "tsx": "^4.19.2",
     "typescript": "^5.6.3",

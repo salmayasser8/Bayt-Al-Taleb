@@ -181,6 +181,7 @@ model College {
   id          String   @id @default(cuid())
   slug        String   @unique
   name        String
+  category    String
   description String?
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
@@ -195,6 +196,7 @@ model Major {
   id        String   @id @default(cuid())
   slug      String   @unique
   name      String
+  degree    String
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

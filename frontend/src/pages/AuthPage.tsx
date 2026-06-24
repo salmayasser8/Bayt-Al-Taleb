@@ -8,7 +8,8 @@ import { FcGoogle } from "react-icons/fc";
 import { TfiMicrosoftAlt } from "react-icons/tfi";
 import { GiGraduateCap } from "react-icons/gi";
 import { useToast } from "@/hooks/use-toast";
-
+import { loginApi, registerApi } from "@/api/auth";
+import { useAuth } from "@/store/AuthContext";
 const loginSchema = z.object({
   email: z
     .string()
@@ -79,6 +80,7 @@ const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
   const { toast } = useToast();
   const navigate = useNavigate();
+  const { login } = useAuth();
 
   const {
     register: registerLogin,
@@ -100,39 +102,51 @@ const AuthPage: React.FC = () => {
 
   const onLogin = async (data: LoginFormData) => {
     try {
-      //   console.log("login:", data);
+      const json = await loginApi(data.email, data.password);
+
+      login(json.data.user, json.data.tokens.accessToken);
+
+      if (
+        json.data.user.role === "ADMIN" ||
+        json.data.user.role === "SUPER_ADMIN"
+      ) {
+        navigate("/");
+      } else if (json.data.user.role === "MODERATOR") {
+        navigate("/supervisor");
+      } else {
+        navigate("/dashboard");
+      }
+
       toast({
         title: "تم تسجيل الدخول",
-        description: "مرحباً بك في بيت الطالب",
+        description: `مرحباً ${json.data.user.fullName}`,
       });
-      navigate("/");
-    } catch {
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "خطأ",
-        description: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
+        description: err.response?.data?.message || "فشل تسجيل الدخول",
       });
     }
   };
-
   const onRegister = async (data: RegisterFormData) => {
     try {
-      // TODO: replace with real API call
-      console.log("register:", data);
+      const json = await registerApi(data.email, data.password, data.name);
+      login(json.data.user, json.data.tokens.accessToken);
+      navigate("/");
       toast({
         title: "تم إنشاء الحساب",
-        description: "مرحباً بك! تم تسجيلك بنجاح",
+        description: `مرحباً ${json.data.user.fullName}`,
       });
-      navigate("/");
-    } catch {
+    } catch (err: any) {
       toast({
         variant: "destructive",
         title: "خطأ",
-        description: "حدث خطأ أثناء إنشاء الحساب، حاول مرة أخرى",
+        description:
+          err.response?.data?.message || "حدث خطأ أثناء إنشاء الحساب",
       });
     }
   };
-
   return (
     <div className="min-h-screen bg-white flex items-center justify-center py-10 relative overflow-hidden">
       <div className="w-full max-w-md relative z-10">
@@ -314,17 +328,6 @@ const AuthPage: React.FC = () => {
                         ? "جارٍ إنشاء الحساب..."
                         : "إنشاء حساب"}
                     </motion.button>
-
-                    {/* <p className="text-center text-sm text-gray-400">
-                      لديك حساب بالفعل؟{" "}
-                      <button
-                        type="button"
-                        onClick={() => setIsLogin(true)}
-                        className="text-primary font-bold hover:text-accent transition-colors"
-                      >
-                        تسجيل الدخول
-                      </button>
-                    </p> */}
                   </form>
                 </motion.div>
               )}
