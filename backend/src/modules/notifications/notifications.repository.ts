@@ -33,15 +33,21 @@ export class NotificationsRepository {
     return toView(row);
   }
 
-  /** Bulk insert for role broadcast. Returns the count of created rows. */
-  async createMany(data: CreateNotificationData[]): Promise<number> {
+  /**
+   * Bulk insert for role broadcast. Accepts a list of target user IDs and
+   * a shared notification payload. Returns the count of created rows.
+   */
+  async createMany(
+    userIds: string[],
+    data: Omit<CreateNotificationData, 'userId'>,
+  ): Promise<number> {
     const result = await this.db.notification.createMany({
-      data: data.map((d) => ({
-        userId: d.userId,
-        title: d.title,
-        message: d.message,
-        metadata: d.metadata != null
-          ? (d.metadata as Prisma.InputJsonValue)
+      data: userIds.map((userId) => ({
+        userId,
+        title: data.title,
+        message: data.message,
+        metadata: data.metadata != null
+          ? (data.metadata as Prisma.InputJsonValue)
           : undefined,
       })),
     });
@@ -49,7 +55,7 @@ export class NotificationsRepository {
   }
 
   /** Paginated list for one user, newest first. */
-  async findByUser(
+  async listForUser(
     userId: string,
     page: number,
     pageSize: number,
@@ -68,19 +74,35 @@ export class NotificationsRepository {
   }
 
   /** Count of unread notifications for a user. */
-  async countUnread(userId: string): Promise<number> {
+  async unreadCount(userId: string): Promise<number> {
     return this.db.notification.count({
       where: { userId, isRead: false },
     });
   }
 
-  /** Mark a single notification read. Returns false if not found or not owned by userId. */
-  async markOneRead(userId: string, notifId: string): Promise<boolean> {
+  /**
+   * Mark a single notification read. Returns false if not found, not owned
+   * by userId, OR already read (but the record still exists).
+   */
+  async markRead(userId: string, notifId: string): Promise<boolean> {
     const result = await this.db.notification.updateMany({
       where: { id: notifId, userId, isRead: false },
       data: { isRead: true },
     });
     return result.count > 0;
+  }
+
+  /**
+   * Check whether a notification with the given id exists for the user,
+   * regardless of read state. Used to distinguish "already read" from
+   * "not found / not yours" when markRead returns false.
+   */
+  async existsForUser(userId: string, notifId: string): Promise<boolean> {
+    const row = await this.db.notification.findFirst({
+      where: { id: notifId, userId },
+      select: { id: true },
+    });
+    return row !== null;
   }
 
   /** Mark all of a user's notifications read. Returns the count updated. */

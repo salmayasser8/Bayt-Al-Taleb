@@ -31,7 +31,7 @@ export class ReviewsRepository {
   }
 
   /** Return all reviews for a given file, newest first. */
-  async listByFileId(fileId: string): Promise<ReviewView[]> {
+  async listForFile(fileId: string): Promise<ReviewView[]> {
     const rows = await this.db.fileReview.findMany({
       where: { fileId },
       orderBy: { createdAt: 'desc' },

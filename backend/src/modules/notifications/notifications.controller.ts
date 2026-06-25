@@ -16,8 +16,8 @@ export class NotificationsController {
   });
 
   getUnreadCount = asyncHandler(async (req: Request, res: Response) => {
-    const unreadCount = await this.service.getUnreadCount(req.user!.id);
-    ok(res, { unreadCount });
+    const count = await this.service.unreadCount(req.user!.id);
+    ok(res, { unreadCount: count });
   });
 
   markAllRead = asyncHandler(async (req: Request, res: Response) => {

@@ -7,7 +7,7 @@
  * unit-testable end-to-end with mocks and no DB.
  */
 import { AuditAction, AuditEntityType, FileStatus, ReviewAction } from '@prisma/client';
-import { ConflictError, ForbiddenError } from '../../shared/errors/app-error.js';
+import { ConflictError } from '../../shared/errors/app-error.js';
 import type { Actor } from '../authorization/authorization.types.js';
 import type { AuditService } from '../audit/audit.service.js';
 import type { ReviewsRepository } from './reviews.repository.js';
@@ -17,14 +17,14 @@ import type { CreateReviewInput } from './reviews.validation.js';
 /**
  * Minimal interface over FilesService to avoid a circular import.
  * The DI container passes the real FilesService at runtime.
+ *
+ * `assertCanManageFile` resolves if the actor may review the file,
+ * and throws ForbiddenError / NotFoundError otherwise.
+ * `applyReviewStatus` transitions the file's status after a decision.
  */
 interface FileStatusUpdater {
-  getById(id: string): Promise<{
-    id: string;
-    status: FileStatus;
-    uploadedById: string;
-  }>;
-  setStatus(id: string, status: FileStatus): Promise<void>;
+  assertCanManageFile(actor: Actor, fileId: string): Promise<{ status: FileStatus; uploadedById: string }>;
+  applyReviewStatus(fileId: string, status: FileStatus): Promise<void>;
 }
 
 /**
@@ -32,12 +32,7 @@ interface FileStatusUpdater {
  * The DI container passes the real NotificationService at runtime.
  */
 interface ReviewNotifier {
-  notifyUser(
-    userId: string,
-    title: string,
-    message: string,
-    metadata?: unknown,
-  ): Promise<void>;
+  notifyUser(data: { userId: string; title: string; message: string; metadata?: unknown }): Promise<void>;
 }
 
 export class ReviewsService {
@@ -50,23 +45,18 @@ export class ReviewsService {
 
   /**
    * Submit a review decision for a file.
-   * Steps execute in strict order: check → persist → transition → audit → notify.
+   * Steps execute in strict order: authorize → check status → persist → transition → audit → notify.
    */
-  async submit(actor: Actor, fileId: string, input: CreateReviewInput): Promise<ReviewView> {
-    // 1. Load the file. getById throws NotFoundError if missing — let it propagate.
-    const file = await this.files.getById(fileId);
+  async review(actor: Actor, fileId: string, input: CreateReviewInput): Promise<ReviewView> {
+    // 1. Assert the actor can manage this file (throws ForbiddenError / NotFoundError if not).
+    const file = await this.files.assertCanManageFile(actor, fileId);
 
     // 2. Only PENDING files can be reviewed.
     if (file.status !== FileStatus.PENDING) {
       throw new ConflictError('File has already been reviewed');
     }
 
-    // 3. A reviewer cannot review their own upload.
-    if (file.uploadedById === actor.id) {
-      throw new ForbiddenError('Reviewers cannot review their own uploads');
-    }
-
-    // 4. Persist the immutable review record.
+    // 3. Persist the immutable review record.
     const review = await this.repo.create({
       fileId,
       reviewerId: actor.id,
@@ -74,12 +64,12 @@ export class ReviewsService {
       comment: input.comment ?? null,
     });
 
-    // 5. Transition file status based on the review decision.
+    // 4. Transition file status based on the review decision.
     const newStatus =
       input.action === ReviewAction.APPROVE ? FileStatus.APPROVED : FileStatus.REJECTED;
-    await this.files.setStatus(fileId, newStatus);
+    await this.files.applyReviewStatus(fileId, newStatus);
 
-    // 6. Append to the audit log (fire-and-forget — AuditService never throws).
+    // 5. Append to the audit log (fire-and-forget — AuditService never throws).
     await this.audit.log({
       userId: actor.id,
       action: AuditAction.UPDATE,
@@ -88,7 +78,7 @@ export class ReviewsService {
       metadata: { action: input.action, reviewId: review.id },
     });
 
-    // 7. Notify the file owner. Errors are swallowed — a notification failure
+    // 6. Notify the file owner. Errors are swallowed — a notification failure
     //    must never surface as an HTTP error on the review request.
     const title =
       input.action === ReviewAction.APPROVE ? 'File approved' : 'File rejected';
@@ -100,20 +90,22 @@ export class ReviewsService {
           : 'Your file has been rejected';
 
     try {
-      await this.notifications.notifyUser(file.uploadedById, title, message);
+      await this.notifications.notifyUser({ userId: file.uploadedById, title, message });
     } catch {
       /* non-critical — notification failure must not fail the review */
     }
 
-    // 8. Return the persisted review view.
     return review;
   }
 
   /**
-   * Return all reviews for a file, newest first.
-   * An empty array is valid when no reviews exist yet — no NotFoundError raised.
+   * Return the review history (audit trail) for a file, newest first.
+   * The actor must be authorised to manage the file before reading its history.
+   * An empty array is valid when no reviews exist yet.
    */
-  async listByFile(fileId: string): Promise<ReviewView[]> {
-    return this.repo.listByFileId(fileId);
+  async history(actor: Actor, fileId: string): Promise<ReviewView[]> {
+    // Assert the actor can manage this file (throws ForbiddenError / NotFoundError if not).
+    await this.files.assertCanManageFile(actor, fileId);
+    return this.repo.listForFile(fileId);
   }
 }

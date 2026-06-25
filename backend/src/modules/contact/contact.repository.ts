@@ -19,11 +19,12 @@ export class ContactRepository {
       email: row.email,
       subject: row.subject,
       body: row.message,
+      isHandled: (row as ContactMessage & { isHandled?: boolean }).isHandled ?? false,
       createdAt: row.createdAt,
     };
   }
 
-  async submit(data: SubmitContactData): Promise<ContactMessageView> {
+  async create(data: SubmitContactData): Promise<ContactMessageView> {
     const row = await this.db.contactMessage.create({
       data: {
         name: data.name,
@@ -70,6 +71,22 @@ export class ContactRepository {
       items: rows.map((row) => this.toView(row)),
       total,
     };
+  }
+
+  /**
+   * Marks a contact message as handled.
+   * Returns the updated view, or null if the id was not found.
+   */
+  async markHandled(id: string): Promise<ContactMessageView | null> {
+    try {
+      const row = await this.db.contactMessage.update({
+        where: { id },
+        data: { isHandled: true } as Prisma.ContactMessageUpdateInput,
+      });
+      return this.toView(row);
+    } catch {
+      return null;
+    }
   }
 
   /**

@@ -27,10 +27,12 @@ export class MajorsRepository {
     return row ? this.toView(row) : null;
   }
 
-  async findBySlug(slug: string): Promise<MajorView | null> {
-    const row = await this.db.major.findFirst({ where: { slug, deletedAt: null } });
-    return row ? this.toView(row) : null;
-  }
+async findBySlug(slug: string): Promise<MajorView | null> {
+  const row = await this.db.major.findFirst({
+    where: { slug, deletedAt: null },
+  });
+  return row ? this.toView(row) : null;
+}
 
   async list(params: { skip: number; take: number; search?: string; collegeId?: string; isActive?: boolean }): Promise<{ items: MajorView[]; total: number }> {
     const where: Prisma.MajorWhereInput = { deletedAt: null };

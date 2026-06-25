@@ -22,6 +22,7 @@ describe('MajorsService', () => {
       update: vi.fn(),
       softDelete: vi.fn().mockResolvedValue(true),
       listByCollege: vi.fn(),
+      findBySlug: vi.fn().mockResolvedValue(null),// yasmine add this one
     } as unknown as MajorsRepository;
     const audit = makeAudit();
     auditRepo = audit.auditRepo;

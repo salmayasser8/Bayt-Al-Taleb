@@ -17,7 +17,7 @@ export class ContactService {
   ) {}
 
   async submit(data: SubmitContactInput): Promise<ContactMessageView> {
-    const message = await this.repo.submit(data);
+const message = await this.repo.create(data);
 
     // NOTE: Contact submission is unauthenticated (public endpoint). The
     // AuditEntry.userId field is typed as `string` (non-optional) because
@@ -26,11 +26,6 @@ export class ContactService {
     // Therefore we intentionally skip audit logging for anonymous submissions.
     // When an authenticated admin manages messages, the actor's real userId IS
     // recorded via the delete() method below.
-    // If the team later adds a system/sentinel user (e.g. id = 'system') or
-    // makes AuditLog.userId nullable, this call should be re-enabled with:
-    //   await this.audit.log({ action: AuditAction.CREATE,
-    //     entityType: AuditEntityType.FILE /* placeholder — see NOTE below */,
-    //     entityId: message.id, userId: 'anonymous' });
 
     return message;
   }
@@ -43,20 +38,38 @@ export class ContactService {
     return message;
   }
 
-  async list(query: ListContactQuery): Promise<Paginated<ContactMessageView>> {
-    const skip = (query.page - 1) * query.pageSize;
+  async list(query: ListContactQuery = { page: 1, pageSize: 20 }): Promise<Paginated<ContactMessageView>> {
+    const page = query?.page ?? 1;
+    const pageSize = query?.pageSize ?? 20;
+    const skip = (page - 1) * pageSize;
     const { items, total } = await this.repo.list({
       skip,
-      take: query.pageSize,
-      search: query.search,
+      take: pageSize,
+      search: query?.search,
     });
     return {
       items,
       total,
-      page: query.page,
-      pageSize: query.pageSize,
-      totalPages: Math.ceil(total / query.pageSize),
+      page,
+      pageSize,
+      totalPages: Math.ceil(total / pageSize),
     };
+  }
+
+  /**
+   * Marks a contact message as handled. Throws NotFoundError if the message
+   * does not exist.
+   */
+  async markHandled(id: string): Promise<ContactMessageView> {
+    const existing = await this.repo.findById(id);
+    if (!existing) {
+      throw new NotFoundError('Contact message not found');
+    }
+    const updated = await this.repo.markHandled(id);
+    if (!updated) {
+      throw new NotFoundError('Contact message not found');
+    }
+    return updated;
   }
 
   async delete(actor: Actor, id: string): Promise<void> {

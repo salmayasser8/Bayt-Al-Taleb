@@ -20,7 +20,7 @@ export type BroadcastResult =
  *
  * `notifyUser` / `notifyRole` are fire-and-forget helpers that other modules
  * call (Reviews → approve/reject, Users → role change). They MUST catch all
- * errors, log them, and return void — a notification failure must never break
+ * errors, log them, and return void/0 — a notification failure must never break
  * the triggering business action.
  *
  * User-facing operations (`list`, `markRead`, etc.) surface errors normally.
@@ -31,39 +31,29 @@ export class NotificationService {
   // ── Fire-and-forget helpers ───────────────────────────────────
 
   /** Persist a notification for a single user. Never throws. */
-  async notifyUser(
-    userId: string,
-    title: string,
-    message: string,
-    metadata?: unknown,
-  ): Promise<void> {
+  async notifyUser(data: CreateNotificationData): Promise<void> {
     try {
-      await this.repo.create({ userId, title, message, metadata });
+      await this.repo.create(data);
     } catch (err) {
-      logger.error({ err, userId, title }, 'Failed to persist notification');
+      logger.error({ err, userId: data.userId, title: data.title }, 'Failed to persist notification');
     }
   }
 
-  /** Broadcast a notification to every active user holding `role`. Never throws. */
+  /**
+   * Broadcast a notification to every active user holding `role`. Never throws.
+   * Returns the number of notifications sent, or 0 on failure.
+   */
   async notifyRole(
     role: RoleName,
-    title: string,
-    message: string,
-    metadata?: unknown,
-  ): Promise<void> {
+    data: Omit<CreateNotificationData, 'userId'>,
+  ): Promise<number> {
     try {
       const userIds = await this.repo.findUserIdsByRole(role);
-      if (userIds.length === 0) return;
-
-      const data: CreateNotificationData[] = userIds.map((uid) => ({
-        userId: uid,
-        title,
-        message,
-        metadata,
-      }));
-      await this.repo.createMany(data);
+      if (userIds.length === 0) return 0;
+      return await this.repo.createMany(userIds, data);
     } catch (err) {
-      logger.error({ err, role, title }, 'Failed to broadcast notification to role');
+      logger.error({ err, role, title: data.title }, 'Failed to broadcast notification to role');
+      return 0;
     }
   }
 
@@ -75,7 +65,7 @@ export class NotificationService {
     page: number,
     pageSize: number,
   ): Promise<Paginated<NotificationView>> {
-    const { items, total } = await this.repo.findByUser(userId, page, pageSize);
+    const { items, total } = await this.repo.listForUser(userId, page, pageSize);
     return {
       items,
       total,
@@ -86,15 +76,23 @@ export class NotificationService {
   }
 
   /** Unread notification count for a user. */
-  async getUnreadCount(userId: string): Promise<number> {
-    return this.repo.countUnread(userId);
+  async unreadCount(userId: string): Promise<number> {
+    return this.repo.unreadCount(userId);
   }
 
-  /** Mark a single notification as read. Throws NotFoundError if not found or not owned. */
+  /**
+   * Mark a single notification as read.
+   * - No-op if the notification exists but is already read.
+   * - Throws NotFoundError if the notification does not belong to the user.
+   */
   async markRead(userId: string, notifId: string): Promise<void> {
-    const updated = await this.repo.markOneRead(userId, notifId);
+    const updated = await this.repo.markRead(userId, notifId);
     if (!updated) {
-      throw new NotFoundError('Notification not found');
+      const exists = await this.repo.existsForUser(userId, notifId);
+      if (!exists) {
+        throw new NotFoundError('Notification not found');
+      }
+      // Already read — no-op, don't throw.
     }
   }
 
@@ -114,12 +112,10 @@ export class NotificationService {
   ): Promise<BroadcastResult> {
     if (input.targetRole) {
       const userIds = await this.repo.findUserIdsByRole(input.targetRole);
-      const data: CreateNotificationData[] = userIds.map((userId) => ({
-        userId,
+      const sent = await this.repo.createMany(userIds, {
         title: input.title,
         message: input.message,
-      }));
-      const sent = await this.repo.createMany(data);
+      });
       return { broadcast: true, targetRole: input.targetRole, sent };
     }
 

@@ -18,7 +18,7 @@ const tokens = new JwtTokenService({
   accessExpiresIn: env.JWT_ACCESS_EXPIRES_IN,
   refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
 });
-const adminToken = `Bearer ${tokens.signAccessToken({ sub: 'admin_1', email: 'a@x.io', role: RoleName.ADMIN })}`;
+const adminToken = `Bearer ${tokens.signAccess({ sub: 'admin_1', email: 'a@x.io', role: RoleName.ADMIN })}`;
 
 const COL_ENG = 'ckcollegeeng00000000000010';
 const COL_MED = 'ckcollegemed00000000000020';

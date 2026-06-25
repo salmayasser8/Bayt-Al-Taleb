@@ -47,8 +47,8 @@ export class CollegesService {
 
   async delete(id: string): Promise<void> {
     await this.getById(id);
-    
-    const majorsCount = await this.repo.countMajors(id);
+
+    const { total: majorsCount } = await this.majors.listByCollege(id, 1, 1);
     if (majorsCount > 0) {
       throw new ConflictError('College still has majors');
     }

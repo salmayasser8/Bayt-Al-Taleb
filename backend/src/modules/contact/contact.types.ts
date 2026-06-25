@@ -6,6 +6,7 @@ export interface ContactMessageView {
   subject: string;
   /** Maps to the `message` column in the DB (Prisma model field is `message`). */
   body: string;
+  isHandled: boolean;
   createdAt: Date;
 }
 

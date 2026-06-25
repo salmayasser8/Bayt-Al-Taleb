@@ -13,13 +13,13 @@ export class ReviewsController {
   submit = asyncHandler(async (req: Request, res: Response) => {
     const fileId = param(req, 'fileId');
     const input = req.body as CreateReviewInput;
-    const result = await this.service.submit(actorOf(req), fileId, input);
+    const result = await this.service.review(actorOf(req), fileId, input);
     created(res, toDto(result));
   });
 
   list = asyncHandler(async (req: Request, res: Response) => {
     const fileId = param(req, 'fileId');
-    const results = await this.service.listByFile(fileId);
+    const results = await this.service.history(actorOf(req), fileId);
     ok(res, results.map(toDto));
   });
 }
