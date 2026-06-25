@@ -25,6 +25,16 @@ export interface Container {
   rolesController:        RolesController;
   scholarshipsController: ScholarshipsController;
   tokenService:           JwtTokenService;
+import { DeletedItemsService }    from './modules/deleted-items/deleted-items.service.js';
+import { DeletedItemsController } from './modules/deleted-items/deleted-items.controller.js';
+
+export interface Container {
+  authController:          AuthController;
+  usersController:         UsersController;
+  rolesController:         RolesController;
+  scholarshipsController:  ScholarshipsController;
+  deletedItemsController:  DeletedItemsController;
+  tokenService:            JwtTokenService;
 }
 
 export function buildContainer(): Container {
@@ -58,11 +68,16 @@ export function buildContainer(): Container {
   const scholarshipsService    = new ScholarshipsService(scholarshipsRepo);
   const scholarshipsController = new ScholarshipsController(scholarshipsService);
 
+  // Deleted Items
+  const deletedItemsService    = new DeletedItemsService(prisma);
+  const deletedItemsController = new DeletedItemsController(deletedItemsService);
+
   return {
     authController,
     usersController,
     rolesController,
     scholarshipsController,
+    deletedItemsController,
     tokenService,
   };
 }
