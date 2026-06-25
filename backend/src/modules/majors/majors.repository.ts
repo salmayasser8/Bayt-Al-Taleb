@@ -10,6 +10,7 @@ export class MajorsRepository {
       id: row.id,
       slug: row.slug,
       name: row.name,
+      degree: row.degree,
       isActive: row.isActive,
       collegeId: row.collegeId,
       createdAt: row.createdAt,

@@ -38,7 +38,11 @@ import { MajorsService }    from './modules/majors/majors.service.js';
 import { MajorsController } from './modules/majors/majors.controller.js';
 
 // ── Files ─────────────────────────────────────────────────────
-import { FilesService } from './modules/files/files.service.js';
+import { FilesRepository }  from './modules/files/files.repository.js';
+import { FilesService }     from './modules/files/files.service.js';
+import { FilesController }  from './modules/files/files.controller.js';
+import { LocalStorageProvider } from './infrastructure/storage/local-storage.provider.js';
+import { FileOwnerType }    from '@prisma/client';
 
 // ── Notifications ─────────────────────────────────────────────
 import { NotificationsRepository } from './modules/notifications/notifications.repository.js';
@@ -65,6 +69,9 @@ export interface Container {
 
   // Notifications
   notificationsController: NotificationsController;
+
+  // Files
+  filesController: FilesController;
 
   // Reviews
   reviewsController: ReviewsController;
@@ -113,12 +120,22 @@ export function buildContainer(db: Database = prisma): Container {
   const notifService    = new NotificationService(notifRepo);
   const notifController = new NotificationsController(notifService);
 
-  // ── Files (minimal — satisfies FileStatusUpdater for reviews) ──
-  const filesService = new FilesService(db);
+  // ── Files ─────────────────────────────────────────────────────
+  const storageProvider  = new LocalStorageProvider('uploads');
+  const filesRepo        = new FilesRepository(db);
+  const filesService     = new FilesService(filesRepo, authzService, auditService, storageProvider);
+  const filesController  = new FilesController(filesService, storageProvider);
+
+  // Register owner existence checkers (majors + scholarships).
+  filesService.registerOwnerChecker(FileOwnerType.MAJOR, {
+    exists: async (_ownerType, id) => majorsRepo.exists(id),
+  });
+  // Scholarships checker will be registered after scholarshipsRepo is built (below).
 
   // ── Reviews ───────────────────────────────────────────────
   const reviewsRepo       = new ReviewsRepository(db);
-  const reviewsService    = new ReviewsService(reviewsRepo, filesService, auditService, notifService);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const reviewsService    = new ReviewsService(reviewsRepo, filesService as any, auditService, notifService);
   const reviewsController = new ReviewsController(reviewsService);
 
   // ── Cross-module wiring ────────────────────────────────────
@@ -130,6 +147,7 @@ export function buildContainer(db: Database = prisma): Container {
     authController,
     collegesController,
     majorsController,
+    filesController,
     notificationsController: notifController,
     reviewsController,
   };

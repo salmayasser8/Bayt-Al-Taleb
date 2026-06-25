@@ -2,6 +2,7 @@ export interface MajorView {
   id: string;
   slug: string;
   name: string;
+  degree: string;
   isActive: boolean;
   collegeId: string | null;
   createdAt: Date;
@@ -11,6 +12,7 @@ export interface MajorView {
 export interface CreateMajorData {
   slug: string;
   name: string;
+  degree: string;
   isActive?: boolean;
   collegeId?: string | null;
 }
@@ -18,6 +20,7 @@ export interface CreateMajorData {
 export interface UpdateMajorData {
   slug?: string;
   name?: string;
+  degree?: string;
   isActive?: boolean;
   collegeId?: string | null;
 }

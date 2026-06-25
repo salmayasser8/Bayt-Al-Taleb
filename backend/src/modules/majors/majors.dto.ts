@@ -4,6 +4,7 @@ export interface MajorDto {
   id: string;
   slug: string;
   name: string;
+  degree: string;
   isActive: boolean;
   collegeId: string | null;
   createdAt: Date;

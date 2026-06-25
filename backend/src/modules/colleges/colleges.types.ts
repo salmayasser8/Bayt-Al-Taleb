@@ -6,6 +6,7 @@ export interface CollegeView {
   isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
+  category: string;
 }
 
 export interface CreateCollegeData {

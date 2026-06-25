@@ -3,6 +3,7 @@ import { z } from 'zod';
 export const createMajorSchema = z.object({
   slug: z.string().min(2).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   name: z.string().min(2).max(200),
+  degree: z.string().min(2).max(100),
   isActive: z.boolean().optional(),
   collegeId: z.string().cuid().nullable().optional(),
 });
@@ -10,6 +11,7 @@ export const createMajorSchema = z.object({
 export const updateMajorSchema = z.object({
   slug: z.string().min(2).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/).optional(),
   name: z.string().min(2).max(200).optional(),
+  degree: z.string().min(2).max(100).optional(),
   isActive: z.boolean().optional(),
   collegeId: z.string().cuid().nullable().optional(),
 }).refine((data) => Object.keys(data).length > 0, {

@@ -44,6 +44,7 @@ export class MajorsService {
     const major = await this.repo.create({
       slug: input.slug,
       name: input.name,
+      degree: input.degree,
       isActive: input.isActive ?? true,
       collegeId: input.collegeId ?? null,
     });
@@ -86,6 +87,7 @@ export class MajorsService {
     const updated = await this.repo.update(id, {
       slug: input.slug,
       name: input.name,
+      degree: input.degree,
       isActive: input.isActive,
       collegeId: input.collegeId,
     });
