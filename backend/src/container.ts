@@ -18,6 +18,8 @@ import { RolesController } from './modules/roles/roles.controller.js';
 import { ScholarshipsRepository } from './modules/scholarships/scholarships.repository.js';
 import { ScholarshipsService }    from './modules/scholarships/scholarships.service.js';
 import { ScholarshipsController } from './modules/scholarships/scholarships.controller.js';
+import { DeletedItemsService }    from './modules/deleted-items/deleted-items.service.js';
+import { DeletedItemsController } from './modules/deleted-items/deleted-items.controller.js';
 
 export interface Container {
   authController:         AuthController;
@@ -25,9 +27,7 @@ export interface Container {
   rolesController:        RolesController;
   scholarshipsController: ScholarshipsController;
   tokenService:           JwtTokenService;
-import { DeletedItemsService }    from './modules/deleted-items/deleted-items.service.js';
-import { DeletedItemsController } from './modules/deleted-items/deleted-items.controller.js';
-
+}
 export interface Container {
   authController:          AuthController;
   usersController:         UsersController;
