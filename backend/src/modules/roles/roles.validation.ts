@@ -1,9 +1,12 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/roles/roles.validation.ts
-// Expected exports: assignRoleParamsSchema, assignRoleBodySchema, AssignRoleInput
-//
-// TODO: implement.
+import { z } from 'zod';
+import { RoleName } from '@prisma/client';
 
-export { };
+export const assignRoleParamsSchema = z.object({
+  userId: z.string().min(1),
+});
+
+export const assignRoleBodySchema = z.object({
+  roleName: z.nativeEnum(RoleName),
+});
+
+export type AssignRoleInput = z.infer<typeof assignRoleBodySchema>;

@@ -1,17 +1,39 @@
+import { Router } from 'express';
+import type { RolesController } from './roles.controller.js';
+import type { TokenService } from '../auth/auth.types.js';
+import { authenticate } from '../../infrastructure/http/middlewares/auth.middleware.js';
+import { requirePermission } from '../../infrastructure/http/middlewares/role.guard.js';
+import { validate } from '../../infrastructure/http/middlewares/validate.js';
+import { PERMISSIONS } from '../../shared/rbac/permissions.js';
+import { assignRoleParamsSchema, assignRoleBodySchema } from './roles.validation.js';
+
 /**
- * Roles routes. Mounted at `/api/v1/roles`.
- * `authenticate` is injected (shared instance) so routing stays construction-free.
+ * Roles routes — mounted at /api/v1/roles
  *
- *   GET  /                       roles:read
- *   PUT  /:userId/assign         roles:assign   (assign a role to a user)
+ *   GET /              list all roles       (roles:read)
+ *   PUT /:userId/assign  assign role to user  (roles:assign)
  */
+export function createRolesRouter(
+  controller: RolesController,
+  tokenService: TokenService,
+): Router {
+  const router = Router();
+  const auth = authenticate(tokenService);
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/roles/roles.routes.ts
-// Expected exports: createRolesRouter
-//
-// TODO: implement.
+  router.get(
+    '/',
+    auth,
+    requirePermission(PERMISSIONS.ROLES_READ),
+    controller.list,
+  );
 
-export { };
+  router.put(
+    '/:userId/assign',
+    auth,
+    requirePermission(PERMISSIONS.ROLES_ASSIGN),
+    validate({ params: assignRoleParamsSchema, body: assignRoleBodySchema }),
+    controller.assign,
+  );
+
+  return router;
+}

@@ -32,32 +32,34 @@ const stats: StatItem[] = [
 
 const StatsBar: React.FC = () => {
   return (
-    <div className=" container bg-white  w-full  shadow-sm">
-      <div className="container mx-auto px-4">
-        <motion.div
-          className="grid grid-cols-1 md:grid-cols-3   text-center"
-          variants={container}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.3 }}
-        >
-          {stats.map((stat, i) => (
-            <motion.div
-              key={i}
-              variants={fadeUp}
-              className="py-8 flex flex-col items-center justify-center hover:bg-muted/50 transition-colors"
-            >
-              <div className="font-bold text-3xl md:text-3xl text-primary">
-                {stat.num}
-              </div>
-              <div className="font-semibold text-gray-500 mt-2 text-lg">
-                {stat.label}
-              </div>
-            </motion.div>
-          ))}
-        </motion.div>
+    <section className="bg-white">
+      <div className=" container bg-white  w-full  shadow-sm">
+        <div className="container mx-auto px-4">
+          <motion.div
+            className="grid grid-cols-1 md:grid-cols-3   text-center"
+            variants={container}
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true, amount: 0.3 }}
+          >
+            {stats.map((stat, i) => (
+              <motion.div
+                key={i}
+                variants={fadeUp}
+                className="py-8 flex flex-col items-center justify-center hover:bg-muted/50 transition-colors"
+              >
+                <div className="font-bold text-3xl md:text-3xl text-primary">
+                  {stat.num}
+                </div>
+                <div className="font-semibold text-gray-500 mt-2 text-lg">
+                  {stat.label}
+                </div>
+              </motion.div>
+            ))}
+          </motion.div>
+        </div>
       </div>
-    </div>
+    </section>
   );
 };
 

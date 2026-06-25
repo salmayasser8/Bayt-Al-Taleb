@@ -10,7 +10,7 @@ export interface JwtConfig {
 }
 
 export class JwtTokenService implements TokenService {
-  constructor(private readonly config: JwtConfig) { }
+  constructor(private readonly config: JwtConfig) {}
 
   signAccess(payload: Omit<AccessTokenPayload, 'iat' | 'exp'>): string {
     return jwt.sign(payload, this.config.accessSecret, {

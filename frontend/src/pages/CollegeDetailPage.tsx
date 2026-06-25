@@ -1,59 +1,38 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
 import { IoChevronBack } from "react-icons/io5";
 import { MdMedicalServices } from "react-icons/md";
+import { MdError } from "react-icons/md";
 import Button from "@/components/common/Button";
-// import AdvisorModal from "@/components/common/AdvisorModal";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { getCollegeById } from "@/api/colleges";
 
-// ── Types ────────────────────────────────────────────────────────────
+// ── Types (Matching API but keeping UI compatibility) ───────────
 
 interface Major {
+  id: string;
+  slug: string;
   name: string;
-  degree: string;
+  degree?: string | null;
 }
 
 interface CollegeData {
   id: string;
+  slug: string;
   name: string;
-  icon: React.ReactNode;
-  description: string;
+  category: string;
+  description: string | null;
   majors: Major[];
-  stats: {
-    majorsCount: number;
-    studentsCount: string;
-    foundedYear: number;
-  };
 }
 
-// ── Data ─────────────────────────────────────────────────────────────
-//will be replaced
-
-const collegeData: CollegeData = {
-  id: "medicine",
-  name: "الطب والصحة",
-  icon: <MdMedicalServices size={40} />,
-  description:
-    "استكشف قائمة التخصصات الأكاديمية المتاحة في مجال الطب والعلوم الصحية، مع توضيح الألقاب العلمية الممنوحة لكل تخصص.",
-  majors: [
-    { name: "الطب العام", degree: "MD" },
-    { name: "التمريض", degree: "BSN" },
-    { name: "العلاج الطبيعي", degree: "BPT" },
-    { name: "علوم المختبرات الطبية", degree: "B.Med.Lab.Sc" },
-    { name: "التصوير الطبي", degree: "B.Med.Imaging" },
-    { name: "علاج النطق والسمع", degree: "BA" },
-    { name: "الصيدلة", degree: "B.Pharm" },
-    { name: "العلاج الوظيفي", degree: "BOT" },
-    { name: "طب الأسنان", degree: "DMD" },
-  ],
-  stats: {
-    majorsCount: 9,
-    studentsCount: "+2,500",
-    foundedYear: 1998,
-  },
+// Fallback for stats not yet in DB
+const UI_STATS = {
+  studentsCount: "+2,500",
+  foundedYear: 1998,
 };
 
-// ── Animation variants ───────────────────────────────────────────────
+// ── Animation variants ───────────────────────────────────────────
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
@@ -71,7 +50,54 @@ const rowFade: Variants = {
 };
 
 const CollegeDetailPage: React.FC = () => {
-  const { id } = useParams();
+  const { id } = useParams<{ id: string }>();
+  const [college, setCollege] = useState<CollegeData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // ── API Fetch ──────────────────────────────────────────────────
+  useEffect(() => {
+    if (!id) return;
+    setLoading(true);
+    setError(null);
+
+    getCollegeById(id)
+      .then((res) => {
+        setCollege(res.data || res);
+      })
+      .catch(() => {
+        setError("فشل في تحميل بيانات الكلية، تأكد من صحة الرابط.");
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, [id]);
+
+  // ── States ─────────────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bgSection flex items-center justify-center">
+        <LoadingSpinner size="lg" text="جاري تحميل تفاصيل الكلية..." />
+      </div>
+    );
+  }
+
+  if (error || !college) {
+    return (
+      <div className="min-h-screen bg-bgSection flex flex-col items-center justify-center gap-4">
+        <MdError size={50} className="text-primary" />
+
+        <p className="text-gray-500 text-lg font-medium">
+          {error || "الكلية غير موجودة"}
+        </p>
+        <Link to="/colleges">
+          <Button>العودة لقائمة الكليات</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  // ── Main UI (Exact same design as your mock) ──────────────────
   return (
     <div className="min-h-screen bg-bgSection">
       <div className="container py-8">
@@ -96,7 +122,7 @@ const CollegeDetailPage: React.FC = () => {
             الكليات
           </Link>
           <IoChevronBack className="text-gray-400" />
-          <span className="text-primary">{collegeData.name}</span>
+          <span className="text-primary">{college.name}</span>
         </motion.div>
 
         {/* Header */}
@@ -107,11 +133,13 @@ const CollegeDetailPage: React.FC = () => {
           className="mb-10"
         >
           <h1 className="font-bold text-3xl md:text-4xl text-primary mb-3">
-            كليات {collegeData.name}
+            كليات {college.name}
           </h1>
-          <p className="text-gray-500 text-lg max-w-2xl">
-            {collegeData.description}
-          </p>
+          {college.description && (
+            <p className="text-gray-500 text-lg max-w-2xl">
+              {college.description}
+            </p>
+          )}
         </motion.div>
 
         {/* Content: table + sidebar */}
@@ -123,45 +151,51 @@ const CollegeDetailPage: React.FC = () => {
             animate="visible"
             className="lg:col-span-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden"
           >
-            <table className="w-full text-right">
-              <thead className="bg-primary/5 border-b border-gray-200">
-                <tr>
-                  <th className="px-6 py-4 font-bold text-lg text-primary">
-                    التخصص
-                  </th>
-                  <th className="px-6 py-4 font-bold text-lg text-primary">
-                    اللقب الأكاديمي
-                  </th>
-                </tr>
-              </thead>
-              <motion.tbody
-                variants={container}
-                initial="hidden"
-                animate="visible"
-              >
-                {collegeData.majors.map((major, i) => (
-                  <motion.tr
-                    key={major.name}
-                    variants={rowFade}
-                    className={`border-b border-gray-100 hover:bg-bgSection transition-colors ${
-                      i === collegeData.majors.length - 1 ? "border-b-0" : ""
-                    }`}
-                  >
-                    <td className="px-6 py-4">
-                      <Link
-                        to={`/majors/${major.name}`}
-                        className="text-primary font-semibold no-underline hover:text-accent transition-colors"
-                      >
-                        {major.name}
-                      </Link>
-                    </td>
-                    <td className="px-6 py-4 text-gray-500 font-medium">
-                      {major.degree}
-                    </td>
-                  </motion.tr>
-                ))}
-              </motion.tbody>
-            </table>
+            {college.majors && college.majors.length > 0 ? (
+              <table className="w-full text-right">
+                <thead className="bg-primary/5 border-b border-gray-200">
+                  <tr>
+                    <th className="px-6 py-4 font-bold text-lg text-primary">
+                      التخصص
+                    </th>
+                    <th className="px-6 py-4 font-bold text-lg text-primary">
+                      اللقب الأكاديمي
+                    </th>
+                  </tr>
+                </thead>
+                <motion.tbody
+                  variants={container}
+                  initial="hidden"
+                  animate="visible"
+                >
+                  {college.majors.map((major, i) => (
+                    <motion.tr
+                      key={major.id}
+                      variants={rowFade}
+                      className={`border-b border-gray-100 hover:bg-bgSection transition-colors ${
+                        i === college.majors.length - 1 ? "border-b-0" : ""
+                      }`}
+                    >
+                      <td className="px-6 py-4">
+                        <Link
+                          to={`/majors/${major.slug}`}
+                          className="text-primary font-semibold no-underline hover:text-accent transition-colors"
+                        >
+                          {major.name}
+                        </Link>
+                      </td>
+                      <td className="px-6 py-4 text-gray-500 font-medium">
+                        {major.degree || "قريباً"}
+                      </td>
+                    </motion.tr>
+                  ))}
+                </motion.tbody>
+              </table>
+            ) : (
+              <div className="py-16 text-center text-gray-400 text-lg">
+                لا توجد تخصصات مضافة لهذه الكلية بعد.
+              </div>
+            )}
           </motion.div>
 
           {/* Sidebar */}
@@ -174,7 +208,8 @@ const CollegeDetailPage: React.FC = () => {
             {/* Advisor card */}
             <div className="bg-white rounded-2xl shadow-sm border border-gray-200 p-6 text-center">
               <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-accent/80 mx-auto mb-4">
-                {collegeData.icon}
+                {/* Icon kept here exactly like your demo, but dynamic */}
+                <MdMedicalServices size={40} />
               </div>
               <h3 className="font-bold text-lg text-primary mb-2">
                 هل تحتاج لمساعدة؟
@@ -204,7 +239,7 @@ const CollegeDetailPage: React.FC = () => {
                     عدد التخصصات
                   </span>
                   <span className="font-bold text-primary">
-                    {collegeData.stats.majorsCount} تخصصات
+                    {college.majors?.length || 0} تخصصات
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -212,7 +247,7 @@ const CollegeDetailPage: React.FC = () => {
                     الطلاب المسجلين
                   </span>
                   <span className="font-bold text-primary">
-                    {collegeData.stats.studentsCount} طالب
+                    {UI_STATS.studentsCount} طالب
                   </span>
                 </div>
                 <div className="flex justify-between items-center">
@@ -220,7 +255,7 @@ const CollegeDetailPage: React.FC = () => {
                     سنة التأسيس
                   </span>
                   <span className="font-bold text-primary">
-                    {collegeData.stats.foundedYear}
+                    {UI_STATS.foundedYear}
                   </span>
                 </div>
               </div>
@@ -228,12 +263,6 @@ const CollegeDetailPage: React.FC = () => {
           </motion.div>
         </div>
       </div>
-
-      {/* Advisor Modal */}
-      {/* <AdvisorModal
-        isOpen={isModalOpen}
-        onClose={() => setIsModalOpen(false)}
-      /> */}
     </div>
   );
 };

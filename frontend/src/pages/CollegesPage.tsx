@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -13,96 +13,32 @@ import {
 } from "react-icons/md";
 import { GiMicroscope } from "react-icons/gi";
 import { GrLinkPrevious } from "react-icons/gr";
-import SearchBar from "@/components/common/SerachBar";
-
+import SearchBar from "@/components/common/SearchBar";
+import { getColleges } from "@/api/colleges";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
 // ── Types ────────────────────────────────────────────────────────────
 
 interface College {
-  id: number;
-  icon: React.ReactNode;
+  id: string;
   name: string;
   category: string;
-  desc: string;
 }
 
-//will be replaced with data from backend
-const colleges: College[] = [
-  {
-    id: 1,
-    icon: <MdPayments size={32} />,
-    name: "اقتصاد وإدارة الأعمال",
-    category: "أعمال",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 2,
-    icon: <MdGavel size={32} />,
-    name: "الحقوق",
-    category: "قانون",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 3,
-    icon: <MdRecordVoiceOver size={32} />,
-    name: "التربية",
-    category: "تربية",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 4,
-    icon: <MdMedicalServices size={32} />,
-    name: "الطب والصحة",
-    category: "طب",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 5,
-    icon: <MdComputer size={32} />,
-    name: "علوم الحاسوب",
-    category: "تقنية",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 6,
-    icon: <MdPalette size={32} />,
-    name: "الفنون والتصميم",
-    category: "فنون",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 7,
-    icon: <MdEngineering size={32} />,
-    name: "الهندسة",
-    category: "هندسة",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 8,
-    icon: <GiMicroscope size={32} />,
-    name: "العلوم الطبيعية",
-    category: "علوم",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-  {
-    id: 9,
-    icon: <MdTrendingUp size={32} />,
-    name: "الاقتصاد",
-    category: "أعمال",
-    desc: "استكشف تخصصات هذا المجال",
-  },
-];
-
-const filterTabs = [
-  "الكل",
-  "طب",
-  "هندسة",
-  "تقنية",
-  "أعمال",
-  "قانون",
-  "علوم",
-  "فنون",
-  "تربية",
-];
+// ── Icon Mapping (Maps API category string to React Icon) ────────────
+const getIconByCategory = (category: string) => {
+  const icons: Record<string, React.ReactNode> = {
+    أعمال: <MdPayments size={32} />,
+    اقتصاد: <MdTrendingUp size={32} />,
+    قانون: <MdGavel size={32} />,
+    تربية: <MdRecordVoiceOver size={32} />,
+    طب: <MdMedicalServices size={32} />,
+    تقنية: <MdComputer size={32} />,
+    فنون: <MdPalette size={32} />,
+    هندسة: <MdEngineering size={32} />,
+    علوم: <GiMicroscope size={32} />,
+  };
+  return icons[category] || <MdComputer size={32} />; // Fallback icon
+};
 
 // ── Animation variants ────────────────────────────────────────────────
 
@@ -140,13 +76,13 @@ const CollegeCard: React.FC<{ college: College }> = ({ college }) => (
     <div className="bg-white p-6 rounded-2xl border border-gray-200 hover:border-primary shadow-sm transition-colors h-full flex flex-col gap-4">
       {/* Icon */}
       <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 text-accent">
-        {college.icon}
+        {getIconByCategory(college.category)}
       </div>
 
       {/* Text */}
       <div className="flex flex-col gap-1 flex-1">
         <h3 className="font-bold text-xl text-primary">{college.name}</h3>
-        <p className="text-gray-500 font-medium">{college.desc}</p>
+        <p className="text-gray-500 font-medium">استكشف تخصصات هذاالمجال</p>
       </div>
 
       {/* Link */}
@@ -161,11 +97,36 @@ const CollegeCard: React.FC<{ college: College }> = ({ college }) => (
   </motion.div>
 );
 
+// ── Main Page Component ──────────────────────────────────────────────
+
 const CollegesPage: React.FC = () => {
+  const [colleges, setColleges] = useState<College[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState("الكل");
 
-  // Filter logic — runs only when searchQuery or activeFilter changes
+  // Fetch Data from API
+  useEffect(() => {
+    getColleges()
+      .then((res) => {
+        // Adjust "res.data" if your API returns the array directly (e.g., just "res")
+        setColleges(res.data || res);
+        setLoading(false);
+      })
+      .catch(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  // Dynamically generate filter tabs based on fetched categories
+  const categories = useMemo(() => {
+    const uniqueCategories = Array.from(
+      new Set(colleges.map((c) => c.category)),
+    );
+    return ["الكل", ...uniqueCategories];
+  }, [colleges]);
+
+  // Filter logic
   const filteredColleges = useMemo(() => {
     return colleges.filter((college) => {
       const matchesSearch = college.name.includes(searchQuery);
@@ -173,7 +134,7 @@ const CollegesPage: React.FC = () => {
         activeFilter === "الكل" || college.category === activeFilter;
       return matchesSearch && matchesFilter;
     });
-  }, [searchQuery, activeFilter]);
+  }, [colleges, searchQuery, activeFilter]);
 
   return (
     <div className="container min-h-screen bg-bgSection">
@@ -192,7 +153,8 @@ const CollegesPage: React.FC = () => {
           الذي يناسب طموحاتك
         </p>
       </motion.div>
-      <div className="container py-10  ">
+
+      <div className="container py-10">
         {/* Search + Filter */}
         <motion.div
           variants={fadeUp}
@@ -200,24 +162,20 @@ const CollegesPage: React.FC = () => {
           animate="visible"
           className="flex flex-col gap-4 mb-8"
         >
-          {/* Search bar */}
           <div className="flex flex-col md:flex-row gap-4 mb-8">
-            {/* will be replaced with real data`from backend*/}
+            {/* Dynamic Select Dropdown from API Data */}
             <select
               value={activeFilter}
               onChange={(e) => setActiveFilter(e.target.value)}
               className="border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors bg-white text-primary"
             >
-              <option value="الكل">جميع الكليات</option>
-              <option value="طب">كلية الطب</option>
-              <option value="هندسة">كلية الهندسة</option>
-              <option value="تقنية">علوم الحاسوب</option>
-              <option value="أعمال">الأعمال</option>
-              <option value="قانون">الحقوق</option>
-              <option value="علوم">العلوم الطبيعية</option>
-              <option value="فنون">الفنون والتصميم</option>
-              <option value="تربية">التربية</option>
+              {categories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat === "الكل" ? "جميع الكليات" : cat}
+                </option>
+              ))}
             </select>
+
             <div className="flex-1">
               <SearchBar
                 value={searchQuery}
@@ -228,22 +186,32 @@ const CollegesPage: React.FC = () => {
           </div>
         </motion.div>
 
-        {/* Colleges grid */}
-        {filteredColleges.length > 0 ? (
+        {/* Loading State */}
+        {loading ? (
+          <motion.div
+            variants={fadeUp}
+            initial="hidden"
+            animate="visible"
+            className="text-center py-20"
+          >
+            <LoadingSpinner size="lg" text="جاري تحميل الكليات..." />
+          </motion.div>
+        ) : filteredColleges.length > 0 ? (
+          /* Colleges Grid */
           <motion.div
             key={activeFilter}
             variants={container}
             initial="hidden"
             animate="visible"
             viewport={{ once: false, amount: 0.1 }}
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 "
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6"
           >
             {filteredColleges.map((college) => (
               <CollegeCard key={college.id} college={college} />
             ))}
           </motion.div>
         ) : (
-          // Empty state
+          /* Empty State */
           <motion.div
             variants={fadeUp}
             initial="hidden"
