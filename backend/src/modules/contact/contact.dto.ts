@@ -1,9 +1,15 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/contact/contact.dto.ts
-// Expected exports: ContactMessageDto
-//
-// TODO: implement.
+import type { ContactMessageView } from './contact.types.js';
 
-export {};
+export interface ContactMessageDto {
+  id: string;
+  name: string;
+  email: string;
+  subject: string;
+  body: string;
+  createdAt: Date;
+}
+
+/** Maps a ContactMessageView to the outbound DTO. Same shape for now. */
+export function toDto(view: ContactMessageView): ContactMessageDto {
+  return view;
+}

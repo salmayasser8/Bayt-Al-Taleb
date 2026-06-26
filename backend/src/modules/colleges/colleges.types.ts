@@ -1,9 +1,24 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/colleges/colleges.types.ts
-// Expected exports: CollegeView, CreateCollegeData, UpdateCollegeData
-//
-// TODO: implement.
+export interface CollegeView {
+  id: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+  category: string;
+}
 
-export {};
+export interface CreateCollegeData {
+  slug: string;
+  name: string;
+  description: string | null;
+  isActive: boolean;
+}
+
+export interface UpdateCollegeData {
+  slug?: string;
+  name?: string;
+  description?: string | null;
+  isActive?: boolean;
+}

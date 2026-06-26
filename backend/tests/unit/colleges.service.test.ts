@@ -8,7 +8,7 @@ import type { MajorView } from '../../src/modules/majors/majors.types.js';
 
 const majorView = (over = {}): MajorView => {
   const m = makeMajor(over);
-  return { id: m.id, slug: m.slug, name: m.name, isActive: m.isActive, collegeId: m.collegeId, createdAt: m.createdAt };
+  return { id: m.id, slug: m.slug, name: m.name, isActive: m.isActive, collegeId: m.collegeId, createdAt: m.createdAt, updatedAt: m.updatedAt };
 };
 
 /** CollegesService unit tests — CRUD + College -> Majors. */
@@ -27,7 +27,7 @@ describe('CollegesService', () => {
       delete: vi.fn(),
     } as unknown as CollegesRepository;
     majors = {
-      listByCollege: vi.fn().mockResolvedValue({ items: [], total: 0 }),
+      listByCollege: vi.fn().mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 }),
     } as unknown as MajorsService;
     service = new CollegesService(repo, majors);
   });
@@ -65,6 +65,9 @@ describe('CollegesService', () => {
       vi.mocked(majors.listByCollege).mockResolvedValue({
         items: [majorView({ id: 'maj_civil', name: 'Civil Engineering', collegeId: 'col_1' })],
         total: 1,
+        page: 1,
+        pageSize: 20,
+        totalPages: 1,
       });
       const { items, total } = await service.listMajors('col_1', 1, 20);
       expect(majors.listByCollege).toHaveBeenCalledWith('col_1', 1, 20);
@@ -81,8 +84,8 @@ describe('CollegesService', () => {
   describe('delete', () => {
     it('deletes a college with no majors', async () => {
       vi.mocked(repo.findById).mockResolvedValue(makeCollege());
-      vi.mocked(majors.listByCollege).mockResolvedValue({ items: [], total: 0 });
-      await service.remove('col_1');
+      vi.mocked(majors.listByCollege).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 });
+      await service.delete('col_1');
       expect(repo.delete).toHaveBeenCalledWith('col_1');
     });
 
@@ -91,8 +94,11 @@ describe('CollegesService', () => {
       vi.mocked(majors.listByCollege).mockResolvedValue({
         items: [majorView({ collegeId: 'col_1' })],
         total: 1,
+        page: 1,
+        pageSize: 20,
+        totalPages: 1,
       });
-      await expect(service.remove('col_1')).rejects.toBeInstanceOf(ConflictError);
+      await expect(service.delete('col_1')).rejects.toBeInstanceOf(ConflictError);
       expect(repo.delete).not.toHaveBeenCalled();
     });
   });

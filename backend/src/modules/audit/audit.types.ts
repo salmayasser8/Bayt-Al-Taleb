@@ -1,11 +1,31 @@
-/** A single audit entry to record. Written only through AuditService. */
+import type { AuditAction, AuditEntityType } from '@prisma/client';
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/audit/audit.types.ts
-// Expected exports: AuditEntry, AuditLogView, AuditLogFilter
-//
-// TODO: implement.
+/** Input shape callers pass to AuditService.log(). */
+export interface AuditEntry {
+  userId: string;
+  action: AuditAction;
+  entityType: AuditEntityType;
+  entityId: string;
+  reason?: string;
+  metadata?: unknown;
+}
 
-export {};
+/** Internal domain representation of a stored audit log row. */
+export interface AuditLogView {
+  id: string;
+  userId: string;
+  action: AuditAction;
+  entityType: AuditEntityType;
+  entityId: string;
+  reason: string | null;
+  metadata: unknown;
+  createdAt: Date;
+}
+
+/** Optional filters for paginated audit log queries. */
+export interface AuditLogFilter {
+  entityType?: AuditEntityType;
+  entityId?: string;
+  action?: AuditAction;
+  userId?: string;
+}
