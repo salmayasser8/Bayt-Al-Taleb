@@ -3,7 +3,7 @@ import { z } from 'zod';
 export const createMajorSchema = z.object({
   slug: z.string().min(2).max(120).regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/),
   name: z.string().min(2).max(200),
-  degree: z.string().min(2).max(100),
+  degree: z.string().min(2).max(100).optional(),
   isActive: z.boolean().optional(),
   collegeId: z.string().cuid().nullable().optional(),
 });

@@ -27,54 +27,44 @@ import { AuthorizationService }    from './modules/authorization/authorization.s
 import { AuditRepository } from './modules/audit/audit.repository.js';
 import { AuditService }    from './modules/audit/audit.service.js';
 
-// ── Colleges ──────────────────────────────────────────────────
-import { CollegesRepository } from './modules/colleges/colleges.repository.js';
-import { CollegesService }    from './modules/colleges/colleges.service.js';
-import { CollegesController } from './modules/colleges/colleges.controller.js';
+// ── Users ─────────────────────────────────────────────────────
+import { UsersRepository }  from './modules/users/users.repository.js';
+import { UsersService }     from './modules/users/users.service.js';
+import { UsersController }  from './modules/users/users.controller.js';
 
-// ── Majors ────────────────────────────────────────────────────
-import { MajorsRepository } from './modules/majors/majors.repository.js';
-import { MajorsService }    from './modules/majors/majors.service.js';
-import { MajorsController } from './modules/majors/majors.controller.js';
+// ── Roles ─────────────────────────────────────────────────────
+import { RolesRepository }  from './modules/roles/roles.repository.js';
+import { RolesService }     from './modules/roles/roles.service.js';
+import { RolesController }  from './modules/roles/roles.controller.js';
 
-// ── Files ─────────────────────────────────────────────────────
-import { FilesRepository }  from './modules/files/files.repository.js';
-import { FilesService }     from './modules/files/files.service.js';
-import { FilesController }  from './modules/files/files.controller.js';
-import { LocalStorageProvider } from './infrastructure/storage/local-storage.provider.js';
-import { FileOwnerType }    from '@prisma/client';
+// ── Scholarships ──────────────────────────────────────────────
+import { ScholarshipsRepository } from './modules/scholarships/scholarships.repository.js';
+import { ScholarshipsService }    from './modules/scholarships/scholarships.service.js';
+import { ScholarshipsController } from './modules/scholarships/scholarships.controller.js';
 
-// ── Notifications ─────────────────────────────────────────────
-import { NotificationsRepository } from './modules/notifications/notifications.repository.js';
-import { NotificationService }     from './modules/notifications/notifications.service.js';
-import { NotificationsController } from './modules/notifications/notifications.controller.js';
-
-// ── Reviews ───────────────────────────────────────────────────
-import { ReviewsRepository }  from './modules/reviews/reviews.repository.js';
-import { ReviewsService }     from './modules/reviews/reviews.service.js';
-import { ReviewsController }  from './modules/reviews/reviews.controller.js';
+// ── Deleted Items ─────────────────────────────────────────────
+import { DeletedItemsService }    from './modules/deleted-items/deleted-items.service.js';
+import { DeletedItemsController } from './modules/deleted-items/deleted-items.controller.js';
 
 export interface Container {
   // Middleware
   authenticate: RequestHandler;
 
   // Auth
-  authController: AuthController;
+  authController:         AuthController;
 
-  // Colleges
-  collegesController: CollegesController;
+  // Users & Roles
+  usersController:        UsersController;
+  rolesController:        RolesController;
 
-  // Majors
-  majorsController: MajorsController;
+  // Scholarships
+  scholarshipsController: ScholarshipsController;
 
-  // Notifications
-  notificationsController: NotificationsController;
+  // Deleted Items
+  deletedItemsController: DeletedItemsController;
 
-  // Files
-  filesController: FilesController;
-
-  // Reviews
-  reviewsController: ReviewsController;
+  // Token service (used by routes that need it directly)
+  tokenService:           JwtTokenService;
 }
 
 export function buildContainer(db: Database = prisma): Container {
@@ -105,50 +95,36 @@ export function buildContainer(db: Database = prisma): Container {
   const auditRepo    = new AuditRepository(db);
   const auditService = new AuditService(auditRepo);
 
-  // ── Majors (built before Colleges so Colleges can reference it) ───
-  const majorsRepo       = new MajorsRepository(db);
-  const majorsService    = new MajorsService(majorsRepo, authzService, auditService);
-  const majorsController = new MajorsController(majorsService);
+  // suppress unused-var warnings for services wired but not yet in Container
+  void authzService;
+  void auditService;
 
-  // ── Colleges ──────────────────────────────────────────────
-  const collegesRepo       = new CollegesRepository(db);
-  const collegesService    = new CollegesService(collegesRepo, majorsService);
-  const collegesController = new CollegesController(collegesService);
+  // ── Users ─────────────────────────────────────────────────
+  const usersRepo       = new UsersRepository(db);
+  const usersService    = new UsersService(usersRepo, hasher);
+  const usersController = new UsersController(usersService);
 
-  // ── Notifications ─────────────────────────────────────────
-  const notifRepo       = new NotificationsRepository(db);
-  const notifService    = new NotificationService(notifRepo);
-  const notifController = new NotificationsController(notifService);
+  // ── Roles ─────────────────────────────────────────────────
+  const rolesRepo       = new RolesRepository(db);
+  const rolesService    = new RolesService(rolesRepo);
+  const rolesController = new RolesController(rolesService);
 
-  // ── Files ─────────────────────────────────────────────────────
-  const storageProvider  = new LocalStorageProvider('uploads');
-  const filesRepo        = new FilesRepository(db);
-  const filesService     = new FilesService(filesRepo, authzService, auditService, storageProvider);
-  const filesController  = new FilesController(filesService, storageProvider);
+  // ── Scholarships ──────────────────────────────────────────
+  const scholarshipsRepo       = new ScholarshipsRepository(db);
+  const scholarshipsService    = new ScholarshipsService(scholarshipsRepo);
+  const scholarshipsController = new ScholarshipsController(scholarshipsService);
 
-  // Register owner existence checkers (majors + scholarships).
-  filesService.registerOwnerChecker(FileOwnerType.MAJOR, {
-    exists: async (_ownerType, id) => majorsRepo.exists(id),
-  });
-  // Scholarships checker will be registered after scholarshipsRepo is built (below).
-
-  // ── Reviews ───────────────────────────────────────────────
-  const reviewsRepo       = new ReviewsRepository(db);
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const reviewsService    = new ReviewsService(reviewsRepo, filesService as any, auditService, notifService);
-  const reviewsController = new ReviewsController(reviewsService);
-
-  // ── Cross-module wiring ────────────────────────────────────
-  // MajorsService needs to verify a college exists before creating a major.
-  majorsService.registerCollegeChecker(collegesRepo);
+  // ── Deleted Items ─────────────────────────────────────────
+  const deletedItemsService    = new DeletedItemsService(prisma);
+  const deletedItemsController = new DeletedItemsController(deletedItemsService);
 
   return {
     authenticate: authMiddleware,
     authController,
-    collegesController,
-    majorsController,
-    filesController,
-    notificationsController: notifController,
-    reviewsController,
+    usersController,
+    rolesController,
+    scholarshipsController,
+    deletedItemsController,
+    tokenService,
   };
 }

@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import type { Container } from './container.js';
 import { createAuthRouter }          from './modules/auth/auth.routes.js';
-import { createCollegesRouter }      from './modules/colleges/colleges.routes.js';
-import { createMajorsRouter }        from './modules/majors/majors.routes.js';
-import { createNotificationsRouter } from './modules/notifications/notifications.routes.js';
-import { createReviewsRouter }       from './modules/reviews/reviews.routes.js';
+import { createUsersRouter }         from './modules/users/users.routes.js';
+import { createRolesRouter }         from './modules/roles/roles.routes.js';
+import { createScholarshipsRouter }  from './modules/scholarships/scholarships.routes.js';
+import { createDeletedItemsRouter }  from './modules/deleted-items/deleted-items.routes.js';
 
 /**
  * Builds the versioned API router (/api/v1).
@@ -14,22 +14,18 @@ export function createApiRouter(container: Container): Router {
   const router = Router();
 
   router.use('/auth',          createAuthRouter(container.authController));
-  router.use('/colleges',      createCollegesRouter(container.collegesController, container.authenticate));
-  router.use('/majors',        createMajorsRouter(container.majorsController, container.authenticate));
-  router.use('/notifications', createNotificationsRouter(container.notificationsController, container.authenticate));
-
-  // Files sub-router: /files/:fileId/reviews
-  const filesRouter = Router();
-  filesRouter.use('/:fileId/reviews', createReviewsRouter(container.reviewsController, container.authenticate));
-  router.use('/files', filesRouter);
+  router.use('/users',         createUsersRouter(container.usersController, container.tokenService));
+  router.use('/roles',         createRolesRouter(container.rolesController, container.tokenService));
+  router.use('/scholarships',  createScholarshipsRouter(container.scholarshipsController, container.tokenService));
+  router.use('/deleted-items', createDeletedItemsRouter(container.deletedItemsController, container.tokenService));
 
   // TODO: mount remaining modules as implemented
-  // router.use('/users',        createUsersRouter(container.usersController));
-  // router.use('/roles',        createRolesRouter(container.rolesController));
-  // router.use('/scholarships', createScholarshipsRouter(container.scholarshipsController));
-  // router.use('/content',      createContentRouter(container.contentController));
-  // router.use('/search',       createSearchRouter(container.searchController));
-  // router.use('/contact',      createContactRouter(container.contactController));
+  // router.use('/colleges',      createCollegesRouter(container.collegesController, container.authenticate));
+  // router.use('/majors',        createMajorsRouter(container.majorsController, container.authenticate));
+  // router.use('/notifications', createNotificationsRouter(container.notificationsController, container.authenticate));
+  // router.use('/files',         createFilesRouter(container.filesController, container.authenticate));
+  // router.use('/reviews',       createReviewsRouter(container.reviewsController, container.authenticate));
+  // router.use('/contact',       createContactRouter(container.contactController));
 
   return router;
 }

@@ -12,7 +12,7 @@ export interface MajorView {
 export interface CreateMajorData {
   slug: string;
   name: string;
-  degree: string;
+  degree?: string;
   isActive?: boolean;
   collegeId?: string | null;
 }

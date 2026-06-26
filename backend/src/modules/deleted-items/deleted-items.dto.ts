@@ -1,11 +1,10 @@
-/** A deleted-items queue entry as returned to clients. */
+import type { AuditEntityType } from '@prisma/client';
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/deleted-items/deleted-items.dto.ts
-// Expected exports: DeletedItemDto
-//
-// TODO: implement.
-
-export {};
+export interface DeletedItemDto {
+  id: string;
+  entityType: AuditEntityType;
+  name: string;
+  deletedAt: Date;
+  deletedById: string | null;
+  deleteReason: string | null;
+}
