@@ -18,22 +18,21 @@ import { RolesController } from './modules/roles/roles.controller.js';
 import { ScholarshipsRepository } from './modules/scholarships/scholarships.repository.js';
 import { ScholarshipsService }    from './modules/scholarships/scholarships.service.js';
 import { ScholarshipsController } from './modules/scholarships/scholarships.controller.js';
+
 import { DeletedItemsService }    from './modules/deleted-items/deleted-items.service.js';
 import { DeletedItemsController } from './modules/deleted-items/deleted-items.controller.js';
 
-export interface Container {
-  authController:         AuthController;
-  usersController:        UsersController;
-  rolesController:        RolesController;
-  scholarshipsController: ScholarshipsController;
-  tokenService:           JwtTokenService;
-}
+import { PostgresSearchProvider } from './modules/search/postgres-search.provider.js';
+import { SearchService }          from './modules/search/search.service.js';
+import { SearchController }       from './modules/search/search.controller.js';
+
 export interface Container {
   authController:          AuthController;
   usersController:         UsersController;
   rolesController:         RolesController;
   scholarshipsController:  ScholarshipsController;
   deletedItemsController:  DeletedItemsController;
+  searchController:        SearchController;
   tokenService:            JwtTokenService;
 }
 
@@ -72,12 +71,18 @@ export function buildContainer(): Container {
   const deletedItemsService    = new DeletedItemsService(prisma);
   const deletedItemsController = new DeletedItemsController(deletedItemsService);
 
+  // Search
+  const searchProvider   = new PostgresSearchProvider(prisma);
+  const searchService    = new SearchService(searchProvider);
+  const searchController = new SearchController(searchService);
+
   return {
     authController,
     usersController,
     rolesController,
     scholarshipsController,
     deletedItemsController,
+    searchController,
     tokenService,
   };
 }

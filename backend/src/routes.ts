@@ -6,6 +6,9 @@ import { createRolesRouter } from './modules/roles/roles.routes.js';
 import { createScholarshipsRouter } from './modules/scholarships/scholarships.routes.js';
 
 import { createDeletedItemsRouter } from './modules/deleted-items/deleted-items.routes.js';
+import { createSearchRouter } from './modules/search/search.routes.js';
+
+
 /**
  * Builds the versioned API router (/api/v1).
  * Mount a new module by adding one line here.
@@ -18,11 +21,11 @@ export function createApiRouter(container: Container): Router {
   router.use('/roles', createRolesRouter(container.rolesController, container.tokenService));
   router.use('/scholarships', createScholarshipsRouter(container.scholarshipsController, container.tokenService));
   router.use('/deleted-items', createDeletedItemsRouter(container.deletedItemsController, container.tokenService));
+  router.use('/search', createSearchRouter(container.searchController));
   // TODO: mount remaining modules as implemented
   // router.use('/majors',       createMajorsRouter(container.majorsController));
   // router.use('/files',        createFilesRouter(container.filesController));
   // router.use('/content',      createContentRouter(container.contentController));
-  // router.use('/search',       createSearchRouter(container.searchController));
   // router.use('/contact',      createContactRouter(container.contactController));
 
   return router;

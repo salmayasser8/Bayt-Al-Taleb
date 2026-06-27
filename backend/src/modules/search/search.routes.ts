@@ -1,16 +1,17 @@
+import { Router } from 'express';
+import type { SearchController } from './search.controller.js';
+import { validate } from '../../infrastructure/http/middlewares/validate.js';
+import { searchQuerySchema } from './search.validation.js';
+
 /**
- * Search routes. Mounted at `/api/v1/search`.
- * Public, read-only global search across majors, scholarships, and files.
+ * Search routes — mounted at /api/v1/search
  *
- *   GET /?q=term&types=major,scholarship,file&page=1&pageSize=20
+ *   GET /?q=term&types=major,scholarship&page=1&pageSize=20   public
  */
+export function createSearchRouter(controller: SearchController): Router {
+  const router = Router();
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/search/search.routes.ts
-// Expected exports: createSearchRouter
-//
-// TODO: implement.
+  router.get('/', validate({ query: searchQuerySchema }), controller.search);
 
-export {};
+  return router;
+}
