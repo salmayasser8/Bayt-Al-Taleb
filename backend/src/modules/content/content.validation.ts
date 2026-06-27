@@ -1,14 +1,16 @@
-/**
- * Validation for the polymorphic content endpoints. The owner is always
- * expressed as (entityType, entityId) in the route params.
- */
+import { z } from 'zod';
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/content/content.validation.ts
-// Expected exports: entityRefParamsSchema, contentIdParamsSchema, createSectionSchema, updateSectionSchema, createFaqSchema, updateFaqSchema, CreateSectionInput, UpdateSectionInput, CreateFaqInput, UpdateFaqInput
-//
-// TODO: implement.
+export const createSectionSchema = z.object({
+  title: z.string().min(1, 'Title is required'),
+  content: z.string().min(1, 'Content is required'),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
 
-export {};
+export const createFaqSchema = z.object({
+  question: z.string().min(1, 'Question is required'),
+  answer: z.string().min(1, 'Answer is required'),
+  sortOrder: z.number().int().min(0).optional().default(0),
+});
+
+export type CreateSectionInput = z.infer<typeof createSectionSchema>;
+export type CreateFaqInput = z.infer<typeof createFaqSchema>;

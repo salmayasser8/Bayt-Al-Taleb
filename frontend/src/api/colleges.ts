@@ -9,3 +9,7 @@ export const getCollegeById = async (id: string) => {
   const res = await api.get(`/colleges/${id}`);
   return res.data;
 };
+export const getCollegeMajors = async (id: string) => {
+  const res = await api.get(`/colleges/${id}/majors`);
+  return res.data;
+};

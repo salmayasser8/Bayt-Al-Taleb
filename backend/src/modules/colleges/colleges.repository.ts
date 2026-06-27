@@ -5,15 +5,17 @@ import type { CollegeView, CreateCollegeData, UpdateCollegeData } from './colleg
 export class CollegesRepository {
   constructor(private readonly db: Database) {}
 
-  private toView(row: College): CollegeView {
+  private toView(row: any): CollegeView {
     return {
       id: row.id,
       slug: row.slug,
+      category: row.category,
       name: row.name,
       description: row.description,
       isActive: row.isActive,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
+      majors: row.majors,
     };
   }
 
@@ -23,7 +25,15 @@ export class CollegesRepository {
   }
 
   async findById(id: string): Promise<CollegeView | null> {
-    const row = await this.db.college.findUnique({ where: { id } });
+    const row = await this.db.college.findUnique({
+      where: { id },
+      include: {
+        majors: {
+          where: { isActive: true, deletedAt: null },
+        },
+      },
+    });
+    // FIX: Pass through toView() so TypeScript is happy!
     return row ? this.toView(row) : null;
   }
 

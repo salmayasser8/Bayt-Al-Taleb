@@ -1,89 +1,22 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { Link } from "react-router-dom";
 import { IoChevronBack } from "react-icons/io5";
 import { MdEmojiEvents } from "react-icons/md";
 import { GrLinkPrevious } from "react-icons/gr";
 import SearchBar from "../components/common/SearchBar.tsx";
+import LoadingSpinner from "../components/common/LoadingSpinner";
 import img from "../assets/images/unnamed.png";
-// ── Types ─────────────────────────────────────────────────────────────
+import { getScholarships } from "../api/scholarships.js";
 
 interface Scholarship {
   id: string;
+  slug?: string;
   name: string;
-  startDate: string;
-  endDate: string;
+  startDate?: string;
+  endDate?: string;
   isActive: boolean;
 }
-
-// ── Data ──────────────────────────────────────────────────────────────
-// TODO: replace with real API call → getScholarships()
-
-const scholarships: Scholarship[] = [
-  {
-    id: "1",
-    name: "منحة بيرح",
-    startDate: "01/01/2026",
-    endDate: "31/01/2026",
-    isActive: true,
-  },
-  {
-    id: "2",
-    name: "منحة سحلاب",
-    startDate: "01/01/2026",
-    endDate: "31/03/2026",
-    isActive: true,
-  },
-  {
-    id: "3",
-    name: "منحة وزارة التربية والتعليم",
-    startDate: "15/01/2026",
-    endDate: "15/04/2026",
-    isActive: true,
-  },
-  {
-    id: "4",
-    name: "منحة مجلس التعليم العالي",
-    startDate: "01/02/2026",
-    endDate: "30/05/2026",
-    isActive: true,
-  },
-  {
-    id: "5",
-    name: "منحة عميد الطلبة",
-    startDate: "01/01/2026",
-    endDate: "31/03/2026",
-    isActive: true,
-  },
-  {
-    id: "6",
-    name: "منحة أوفيك",
-    startDate: "01/03/2026",
-    endDate: "01/06/2026",
-    isActive: true,
-  },
-  {
-    id: "7",
-    name: "منحة عتيد بلس",
-    startDate: "10/01/2026",
-    endDate: "10/05/2026",
-    isActive: true,
-  },
-  {
-    id: "8",
-    name: "منحة متنال",
-    startDate: "01/01/2026",
-    endDate: "31/03/2026",
-    isActive: false,
-  },
-  {
-    id: "9",
-    name: "منحة قوس",
-    startDate: "01/04/2026",
-    endDate: "30/06/2026",
-    isActive: true,
-  },
-];
 
 // ── Sort options ──────────────────────────────────────────────────────
 
@@ -115,23 +48,55 @@ const rowFade: Variants = {
 // ── Main Page ─────────────────────────────────────────────────────────
 
 const ScholarshipsPage: React.FC = () => {
+  const [scholarships, setScholarships] = useState<Scholarship[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<SortOption>("deadline");
 
+  // ── Fetch Data ────────────────────────────────────────────────
+  useEffect(() => {
+    getScholarships()
+      .then((res) => {
+        setScholarships(res.data || res);
+      })
+      .catch(() => {
+        // Handle error silently for now
+      })
+      .finally(() => {
+        setLoading(false);
+      });
+  }, []);
+
+  // ── Filter & Sort Logic ───────────────────────────────────────
   const filteredAndSorted = useMemo(() => {
     let result = scholarships.filter((s) => s.name.includes(searchQuery));
 
     if (sortBy === "alphabetical") {
       result = [...result].sort((a, b) => a.name.localeCompare(b.name, "ar"));
     } else if (sortBy === "deadline") {
-      result = [...result].sort(
-        (a, b) =>
-          new Date(a.endDate.split("/").reverse().join("-")).getTime() -
-          new Date(b.endDate.split("/").reverse().join("-")).getTime(),
-      );
+      result = [...result].sort((a, b) => {
+        // Safe date parsing: puts items without dates at the end
+        const dateA = a.endDate
+          ? new Date(a.endDate.split("/").reverse().join("-")).getTime()
+          : Infinity;
+        const dateB = b.endDate
+          ? new Date(b.endDate.split("/").reverse().join("-")).getTime()
+          : Infinity;
+        return dateA - dateB;
+      });
     }
+    // "newest" relies on createdAt which isn't in the UI, so it keeps default array order
     return result;
-  }, [searchQuery, sortBy]);
+  }, [scholarships, searchQuery, sortBy]);
+
+  // ── Loading State ─────────────────────────────────────────────
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-bgSection flex items-center justify-center">
+        <LoadingSpinner size="lg" text="جاري تحميل المنح..." />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-bgSection">
@@ -183,7 +148,6 @@ const ScholarshipsPage: React.FC = () => {
             />
           </div>
 
-          {/* Sort dropdown */}
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -230,19 +194,17 @@ const ScholarshipsPage: React.FC = () => {
                       i === filteredAndSorted.length - 1 ? "border-b-0" : ""
                     }`}
                   >
-                    {/* Name */}
                     <td className="px-6 py-4">
                       <span className="font-bold text-primary">
                         {scholarship.name}
                       </span>
                     </td>
 
-                    {/* Dates */}
                     <td className="px-6 py-4 text-gray-500 font-medium text-sm">
-                      {scholarship.startDate} — {scholarship.endDate}
+                      {scholarship.startDate || "—"} —{" "}
+                      {scholarship.endDate || "—"}
                     </td>
 
-                    {/* Status badge */}
                     <td className="px-6 py-4">
                       <span
                         className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -255,10 +217,9 @@ const ScholarshipsPage: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* Link */}
                     <td className="px-6 py-4">
                       <Link
-                        to={`/scholarships/${scholarship.id}`}
+                        to={`/scholarships/${scholarship.slug || scholarship.id}`}
                         className="flex items-center gap-1 text-primary font-semibold no-underline hover:text-accent transition-colors text-sm w-fit group"
                       >
                         التفاصيل
@@ -290,37 +251,31 @@ const ScholarshipsPage: React.FC = () => {
           className="flex flex-col md:flex-row items-stretch gap-6"
         >
           <div className="relative w-full md:w-2/3 rounded-2xl overflow-hidden min-h-[150px] group">
-            {/* Image */}
             <div
               className="absolute inset-0 bg-cover bg-center transition-transform duration-500 group-hover:scale-110"
               style={{ backgroundImage: `url(${img})` }}
             />
-
-            {/* Overlay */}
             <div className="absolute inset-0 bg-black/50" />
-
-            {/* Content */}
             <div className="relative z-10 p-14 flex flex-col justify-center h-full">
               <h3 className="text-3xl font-bold text-white mb-3">
                 مستقبلك يبدأ هنا
               </h3>
-
               <p className="text-white/90">
                 استكشف الفرص التعليمية المتاحة واحصل على الدعم المالي الذي
                 تستحقه
               </p>
             </div>
           </div>
+
           <div className="bg-hero rounded-2xl p-6 flex flex-col gap-4 justify-center items-center text-center min-h-[150px] md:w-1/3">
             <div className="w-16 h-16 rounded-full bg-accent/20 flex items-center justify-center text-accent">
               <MdEmojiEvents size={35} />
             </div>
-
             <div>
+              {/* This now counts dynamically from the API! */}
               <h3 className="font-bold text-xl text-paragraph">
                 {scholarships.filter((s) => s.isActive).length}+ منح نشطة
               </h3>
-
               <p className="text-paragraph/70 font-semibold text-sm">
                 سجل الآن قبل انتهاء المواعيد النهائية
               </p>

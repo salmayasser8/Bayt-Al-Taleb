@@ -18,6 +18,7 @@ export class CollegesService {
       name: input.name,
       description: input.description ?? null,
       isActive: input.isActive ?? true,
+      category: input.category ?? '',
     });
   }
 
@@ -56,9 +57,13 @@ export class CollegesService {
     await this.repo.delete(id);
   }
 
-  async listMajors(collegeId: string, page: number, pageSize: number): Promise<Paginated<MajorView>> {
+  async listMajors(
+    collegeId: string,
+    page: number,
+    pageSize: number,
+  ): Promise<Paginated<MajorView>> {
     await this.getById(collegeId);
-    
+
     const { items, total } = await this.majors.listByCollege(collegeId, page, pageSize);
     return {
       items,
