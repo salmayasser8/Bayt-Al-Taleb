@@ -21,8 +21,8 @@ const tokens = new JwtTokenService({
   refreshExpiresIn: env.JWT_REFRESH_EXPIRES_IN,
 });
 const tokenFor = (sub: string, role: RoleName) =>
-  tokens.signAccessToken({ sub, email: `${sub}@x.io`, role });
-
+  tokens.signAccess({ sub, email: `${sub}@x.io`, role });
+//signAccess ??
 const MEMBER_ID = 'ckmemberusr0000000000000a';
 const MAJOR_ID = 'ckmajornotif000000000000a';
 const FILE_ID = 'ckfilenotif0000000000000a';
@@ -137,7 +137,7 @@ function makeStubDb(): Database {
             deleteReason: null,
           }
         : null,
-    update: async ({ data }: { data: { status: FileStatus } }) => {
+    update: async ({ data }: { where: { id: string }; data: { status: FileStatus } }) => {
       fileStatus = data.status;
       return { id: FILE_ID, status: fileStatus };
     },

@@ -1,9 +1,13 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/audit/audit.validation.ts
-// Expected exports: listAuditQuerySchema, ListAuditQuery
-//
-// TODO: implement.
+import { z } from 'zod';
+import { AuditAction, AuditEntityType } from '@prisma/client';
 
-export {};
+export const listAuditQuerySchema = z.object({
+  entityType: z.nativeEnum(AuditEntityType).optional(),
+  entityId: z.string().cuid().optional(),
+  action: z.nativeEnum(AuditAction).optional(),
+  userId: z.string().cuid().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(100).default(20),
+});
+
+export type ListAuditQuery = z.infer<typeof listAuditQuerySchema>;

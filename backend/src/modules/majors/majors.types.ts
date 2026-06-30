@@ -1,9 +1,26 @@
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/majors/majors.types.ts
-// Expected exports: MajorView, CreateMajorData, UpdateMajorData
-//
-// TODO: implement.
+export interface MajorView {
+  id: string;
+  slug: string;
+  name: string;
+  degree: string;
+  isActive: boolean;
+  collegeId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export {};
+export interface CreateMajorData {
+  slug: string;
+  name: string;
+  degree?: string;
+  isActive?: boolean;
+  collegeId?: string | null;
+}
+
+export interface UpdateMajorData {
+  slug?: string;
+  name?: string;
+  degree?: string;
+  isActive?: boolean;
+  collegeId?: string | null;
+}

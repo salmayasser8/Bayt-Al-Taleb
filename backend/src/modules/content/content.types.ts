@@ -1,15 +1,50 @@
-/**
- * A reference to ANY content-owning entity. Every Section/FAQ operation is
- * scoped by one of these. Adding a new owner type = extend ContentEntityType
- * in the schema; no new tables, no new services.
- */
+export enum EntityType {
+  MAJOR = 'MAJOR',
+  SCHOLARSHIP = 'SCHOLARSHIP',
+}
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/content/content.types.ts
-// Expected exports: EntityRef, SectionView, FaqView, CreateSectionData, UpdateSectionData, CreateFaqData, UpdateFaqData, EntityExistenceChecker
-//
-// TODO: implement.
+export interface SectionView {
+  id: string;
+  entityType: EntityType;
+  entityId: string;
+  title: string;
+  content: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
 
-export {};
+export interface FaqView {
+  id: string;
+  entityType: EntityType;
+  entityId: string;
+  question: string;
+  answer: string;
+  sortOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface CreateSectionData {
+  title: string;
+  content: string;
+  sortOrder?: number;
+}
+
+export interface UpdateSectionData {
+  title?: string;
+  content?: string;
+  sortOrder?: number;
+}
+
+export interface CreateFaqData {
+  question: string;
+  answer: string;
+  sortOrder?: number;
+}
+
+export interface UpdateFaqData {
+  question?: string;
+  answer?: string;
+  sortOrder?: number;
+}

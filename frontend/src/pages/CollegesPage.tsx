@@ -110,7 +110,7 @@ const CollegesPage: React.FC = () => {
     getColleges()
       .then((res) => {
         // Adjust "res.data" if your API returns the array directly (e.g., just "res")
-        setColleges(res.data || res);
+        setColleges(res.data.items || []);
         setLoading(false);
       })
       .catch(() => {
