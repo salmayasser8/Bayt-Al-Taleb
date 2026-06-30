@@ -8,6 +8,10 @@ import type { FilesService } from './files.service.js';
 import { toFileDto } from './files.dto.js';
 import type { UploadFileMetaInput, ListFilesQuery } from './files.validation.js';
 import type { FileListFilter } from './files.types.js';
+<<<<<<< HEAD
+import { FileOwnerType } from '@prisma/client';
+=======
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
 
 /**
  * FilesController — thin HTTP adapter over FilesService.
@@ -92,7 +96,48 @@ export class FilesController {
     res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
     res.send(file.buffer);
   });
+<<<<<<< HEAD
+  // getOwner of file
+ /**
+ * GET /files/owner/:ownerType/:ownerId
+ */
+getByOwner = asyncHandler(async (req: Request, res: Response) => {
+  const ownerType = param(req, 'ownerType');
+  const ownerId = param(req, 'ownerId');
 
+  const result = await this.service.list({
+    ownerType: ownerType as FileOwnerType,
+    ownerId,
+    page: 1,
+    pageSize: 100,
+  });
+
+  ok(
+    res,
+    result.items.map((view) =>
+      toFileDto(view, this.storage.getPublicUrl(view.storageKey)),
+    ),
+  );
+});
+getApprovedByOwner = asyncHandler(async (req: Request, res: Response) => {
+  const ownerType = param(req, 'ownerType') as FileOwnerType;
+  const ownerId = param(req, 'ownerId');
+
+  const files = await this.service.getApprovedByOwner(
+    ownerType,
+    ownerId,
+  );
+
+  ok(
+    res,
+    files.map((view) =>
+      toFileDto(view, this.storage.getPublicUrl(view.storageKey)),
+    ),
+  );
+});
+=======
+
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   /**
    * DELETE /files/:fileId — soft-delete a file.
    * Optional body: { reason?: string }.

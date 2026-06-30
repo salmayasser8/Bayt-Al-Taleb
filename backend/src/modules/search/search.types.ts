@@ -1,16 +1,28 @@
-/**
- * Search domain contracts. STRUCTURE ONLY — no search logic is implemented in
- * the foundation. A future dev plugs in an engine (Postgres FTS, Meilisearch,
- * OpenSearch…) by implementing `SearchProvider`; the rest of the app depends
- * only on these interfaces.
- */
+export type SearchableType = 'major' | 'scholarship' | 'file';
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/search/search.types.ts
-// Expected exports: SearchableType, SearchQuery, SearchHit, SearchResults, SearchProvider
-//
-// TODO: implement.
+export interface SearchQuery {
+  term: string;
+  types?: SearchableType[];
+  page: number;
+  pageSize: number;
+}
 
-export {};
+export interface SearchHit {
+  type: SearchableType;
+  id: string;
+  title: string;
+  slug?: string;
+  score?: number;
+}
+
+export interface SearchResults {
+  query: string;
+  hits: SearchHit[];
+  total: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface SearchProvider {
+  search(query: SearchQuery): Promise<SearchResults>;
+}

@@ -219,7 +219,24 @@ export class FilesService {
     }
     return file;
   }
+<<<<<<< HEAD
+ async getApprovedByOwner(
+  ownerType: FileOwnerType,
+  ownerId: string,
+): Promise<FileView[]> {
+  const result = await this.list({
+    ownerType,
+    ownerId,
+    status: FileStatus.APPROVED,
+    page: 1,
+    pageSize: 100,
+  });
 
+  return result.items;
+}
+=======
+
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   /**
    * Paginated list of non-deleted files with optional filters.
    */

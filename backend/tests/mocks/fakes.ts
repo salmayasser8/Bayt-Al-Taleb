@@ -25,19 +25,32 @@ export class FakePasswordHasher implements PasswordHasher {
 
 /** Encodes payloads as JSON strings; "verifies" by parsing them back. */
 export class FakeTokenService implements TokenService {
-  signAccessToken(payload: AccessTokenPayload): string {
+  signAccess(payload: AccessTokenPayload): string {
     return `access.${JSON.stringify(payload)}`;
   }
-  signRefreshToken(payload: RefreshTokenPayload): string {
+  signRefresh(payload: RefreshTokenPayload): string {
     return `refresh.${JSON.stringify(payload)}`;
   }
-  verifyAccessToken(token: string): AccessTokenPayload {
+  verifyAccess(token: string): AccessTokenPayload {
     if (!token.startsWith('access.')) throw new Error('invalid');
     return JSON.parse(token.slice('access.'.length)) as AccessTokenPayload;
   }
-  verifyRefreshToken(token: string): RefreshTokenPayload {
+  verifyRefresh(token: string): RefreshTokenPayload {
     if (!token.startsWith('refresh.')) throw new Error('invalid');
     return JSON.parse(token.slice('refresh.'.length)) as RefreshTokenPayload;
+  }
+
+  signAccessToken(payload: AccessTokenPayload): string {
+    return this.signAccess(payload);
+  }
+  signRefreshToken(payload: RefreshTokenPayload): string {
+    return this.signRefresh(payload);
+  }
+  verifyAccessToken(token: string): AccessTokenPayload {
+    return this.verifyAccess(token);
+  }
+  verifyRefreshToken(token: string): RefreshTokenPayload {
+    return this.verifyRefresh(token);
   }
 }
 

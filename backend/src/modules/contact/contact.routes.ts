@@ -39,6 +39,13 @@ export function createContactRouter(
     validate({ params: contactIdParamsSchema }),
     controller.getById,
   );
+  router.patch(
+  '/:id/handle',
+  authenticate,
+  requireAnyPermission(PERMISSIONS.CONTACT_MANAGE),
+  validate({ params: contactIdParamsSchema }),
+  controller.markHandled,
+);
 
   // DELETE /:id — requires CONTACT_MANAGE permission (ADMIN+).
   router.delete(

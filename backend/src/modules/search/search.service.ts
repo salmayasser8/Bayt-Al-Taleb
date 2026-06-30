@@ -1,15 +1,19 @@
+import type { SearchProvider, SearchResults, SearchableType } from './search.types.js';
+import type { SearchQueryInput } from './search.validation.js';
+
 /**
  * SearchService — thin orchestration over a pluggable SearchProvider.
- * Owns query normalization & default scoping; delegates the actual search to
- * whatever provider is injected. No engine-specific code lives here.
+ * Normalizes the query and delegates to the injected provider.
  */
+export class SearchService {
+  constructor(private readonly provider: SearchProvider) {}
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/search/search.service.ts
-// Expected exports: SearchService
-//
-// TODO: implement.
-
-export {};
+  async search(input: SearchQueryInput): Promise<SearchResults> {
+    return this.provider.search({
+      term:     input.q.trim(),
+      types:    input.types as SearchableType[] | undefined,
+      page:     input.page,
+      pageSize: input.pageSize,
+    });
+  }
+}

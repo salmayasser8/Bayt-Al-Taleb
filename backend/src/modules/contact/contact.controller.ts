@@ -27,6 +27,13 @@ export class ContactController {
     const result = await this.service.list(query);
     paginated(res, { ...result, items: result.items.map(toDto) });
   });
+  markHandled = asyncHandler(async (req: Request, res: Response) => {
+  const id = param(req, 'id');
+
+  const result = await this.service.markHandled(id);
+
+  ok(res, toDto(result));
+});
 
   delete = asyncHandler(async (req: Request, res: Response) => {
     const id = param(req, 'id');

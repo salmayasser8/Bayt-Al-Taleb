@@ -7,13 +7,14 @@ import { NotFoundError } from '../../src/shared/errors/app-error.js';
 describe('ContactService', () => {
   let repo: ContactRepository;
   let service: ContactService;
+  const audit = { log: vi.fn() } as const;
 
   const msg = (over = {}) => ({
     id: 'c1',
     name: 'Sara',
     email: 'sara@example.com',
     subject: 'Hi',
-    message: 'Hello there',
+    body: 'Hello there',
     isHandled: false,
     createdAt: new Date(),
     ...over,
@@ -26,7 +27,7 @@ describe('ContactService', () => {
       list: vi.fn(),
       markHandled: vi.fn(),
     } as unknown as ContactRepository;
-    service = new ContactService(repo);
+    service = new ContactService(repo, audit as any);
   });
 
   it('submits a contact message', async () => {
@@ -34,8 +35,9 @@ describe('ContactService', () => {
     const result = await service.submit({
       name: 'Sara',
       email: 'sara@example.com',
+    
       subject: 'Hi',
-      message: 'Hello there',
+      body: 'Hello there',
     });
     expect(result.isHandled).toBe(false);
     expect(repo.create).toHaveBeenCalledOnce();
@@ -43,9 +45,9 @@ describe('ContactService', () => {
 
   it('lists messages with pagination passthrough', async () => {
     vi.mocked(repo.list).mockResolvedValue({ items: [msg() as never], total: 1 });
-    const { items, total } = await service.list(undefined, 1, 20);
-    expect(total).toBe(1);
-    expect(items).toHaveLength(1);
+    const result = await service.list({ page: 1, pageSize: 20 });
+    expect(result.total).toBe(1);
+    expect(result.items).toHaveLength(1);
   });
 
   it('marks a message handled', async () => {
