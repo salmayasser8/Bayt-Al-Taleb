@@ -1,8 +1,7 @@
 import { Router } from 'express';
-import type { RequestHandler } from 'express'; // <-- ADD THIS
+import type { RequestHandler } from 'express';
 import { ContentController } from './content.controller.js';
 
-// ADD authenticate to the arguments
 export function createContentRouter(
   contentController: ContentController,
   authenticate?: RequestHandler,

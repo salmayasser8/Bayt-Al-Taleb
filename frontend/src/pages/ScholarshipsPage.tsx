@@ -4,7 +4,7 @@ import { Link } from "react-router-dom";
 import { IoChevronBack } from "react-icons/io5";
 import { MdEmojiEvents } from "react-icons/md";
 import { GrLinkPrevious } from "react-icons/gr";
-import SearchBar from "../components/common/SearchBar.tsx";
+import SearchBar from "../components/common/SearchBar";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import img from "../assets/images/unnamed.png";
 import { getScholarships } from "../api/scholarships.js";
