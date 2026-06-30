@@ -219,6 +219,7 @@ export class FilesService {
     }
     return file;
   }
+<<<<<<< HEAD
  async getApprovedByOwner(
   ownerType: FileOwnerType,
   ownerId: string,
@@ -233,6 +234,9 @@ export class FilesService {
 
   return result.items;
 }
+=======
+
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   /**
    * Paginated list of non-deleted files with optional filters.
    */

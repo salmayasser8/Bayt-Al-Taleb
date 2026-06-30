@@ -7,6 +7,7 @@ import { makeCollege, makeMajor } from '../fixtures/index.js';
 import type { CollegeView } from '../../src/modules/colleges/colleges.types.js';
 import type { MajorView } from '../../src/modules/majors/majors.types.js';
 
+<<<<<<< HEAD
 const collegeView = (over: Partial<CollegeView> = {}): CollegeView => {
   const c = makeCollege(over as never);
   return {
@@ -34,6 +35,11 @@ const majorView = (over: Partial<MajorView> = {}): MajorView => {
     createdAt: m.createdAt,
     updatedAt: m.updatedAt,
   };
+=======
+const majorView = (over = {}): MajorView => {
+  const m = makeMajor(over);
+  return { id: m.id, slug: m.slug, name: m.name, isActive: m.isActive, collegeId: m.collegeId, createdAt: m.createdAt, updatedAt: m.updatedAt };
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
 };
 
 /** CollegesService unit tests — CRUD + College -> Majors. */
@@ -108,7 +114,11 @@ describe('CollegesService', () => {
 
   describe('delete', () => {
     it('deletes a college with no majors', async () => {
+<<<<<<< HEAD
       vi.mocked(repo.findById).mockResolvedValue(collegeView());
+=======
+      vi.mocked(repo.findById).mockResolvedValue(makeCollege());
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
       vi.mocked(majors.listByCollege).mockResolvedValue({ items: [], total: 0, page: 1, pageSize: 20, totalPages: 0 });
       await service.delete('col_1');
       expect(repo.delete).toHaveBeenCalledWith('col_1');

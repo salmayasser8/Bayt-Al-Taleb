@@ -42,6 +42,7 @@ export function createFilesRouter(
     validate({ query: listFilesQuerySchema }),
     controller.list.bind(controller),
   );
+<<<<<<< HEAD
   router.get(
   '/owner/:ownerType/:ownerId',
   authenticate,
@@ -54,6 +55,9 @@ router.get(
   requirePermission('files:read'),
   controller.getApprovedByOwner.bind(controller),
 );
+=======
+
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   // GET /:fileId/download — BEFORE /:fileId so Express matches the literal first
   router.get(
     '/:fileId/download',
@@ -71,6 +75,10 @@ router.get(
     validate({ params: fileIdParamsSchema }),
     controller.getById.bind(controller),
   );
+<<<<<<< HEAD
+=======
+
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   // DELETE /:fileId — soft delete
   router.delete(
     '/:fileId',

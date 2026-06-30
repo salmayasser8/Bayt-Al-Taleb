@@ -10,6 +10,7 @@ import { createRolesRouter } from './modules/roles/roles.routes.js';
 import { createCollegesRouter } from './modules/colleges/colleges.routes.js';
 import { createMajorsRouter } from './modules/majors/majors.routes.js';
 import { createScholarshipsRouter } from './modules/scholarships/scholarships.routes.js';
+<<<<<<< HEAD
 import { createContentRouter } from './modules/content/content.routes.js';
 import { createDeletedItemsRouter } from './modules/deleted-items/deleted-items.routes.js';
 import { createSearchRouter } from './modules/search/search.routes.js';
@@ -20,6 +21,17 @@ import { createContactRouter } from './modules/contact/contact.routes.js';
 import { createNotificationsRouter }from './modules/notifications/notifications.routes.js';
 import { createAuditRouter } from './modules/audit/audit.routes.js';
 
+=======
+import { createDeletedItemsRouter } from './modules/deleted-items/deleted-items.routes.js';
+import { createCollegesRouter } from './modules/colleges/colleges.routes.js';
+import { createMajorsRouter } from './modules/majors/majors.routes.js';
+import { createContentRouter } from './modules/content/content.routes.js';
+
+/**
+ * Builds the versioned API router (/api/v1).
+ * Mount a new module by adding one line here.
+ */
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
 export function createApiRouter(container: Container): Router {
   const router = Router();
   
@@ -28,6 +40,7 @@ export function createApiRouter(container: Container): Router {
   Number(env.MAX_FILE_SIZE_MB)
 );
   router.use('/auth', createAuthRouter(container.authController));
+<<<<<<< HEAD
 
   router.use('/search', createSearchRouter(container.searchController));
 
@@ -104,5 +117,30 @@ router.use(
     authMiddleware,
   ),
 );
+=======
+  router.use('/users', createUsersRouter(container.usersController, container.tokenService));
+  router.use('/roles', createRolesRouter(container.rolesController, container.tokenService));
+  router.use(
+    '/scholarships',
+    createScholarshipsRouter(container.scholarshipsController, container.tokenService),
+  );
+  router.use(
+    '/deleted-items',
+    createDeletedItemsRouter(container.deletedItemsController, container.tokenService),
+  );
+
+  // TODO: mount remaining modules as implemented
+  router.use(
+    '/colleges',
+    createCollegesRouter(container.collegesController, container.authenticate),
+  );
+  router.use('/majors', createMajorsRouter(container.majorsController, container.authenticate));
+  router.use('/content', createContentRouter(container.contentController, container.authenticate));
+  // router.use('/notifications', createNotificationsRouter(container.notificationsController, container.authenticate));
+  // router.use('/files',         createFilesRouter(container.filesController, container.authenticate));
+  // router.use('/reviews',       createReviewsRouter(container.reviewsController, container.authenticate));
+  // router.use('/contact',       createContactRouter(container.contactController));
+ 
+>>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   return router;
 }
