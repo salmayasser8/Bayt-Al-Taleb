@@ -57,7 +57,7 @@ const ScholarshipsPage: React.FC = () => {
   useEffect(() => {
     getScholarships()
       .then((res) => {
-        setScholarships(res.data || res);
+        setScholarships(res.data?.items || res.data || []);
       })
       .catch(() => {
         // Handle error silently for now
@@ -147,7 +147,6 @@ const ScholarshipsPage: React.FC = () => {
               placeholder="ابحث عن منحة..."
             />
           </div>
-
           <select
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value as SortOption)}
@@ -160,7 +159,6 @@ const ScholarshipsPage: React.FC = () => {
             ))}
           </select>
         </motion.div>
-
         {/* Table */}
         <motion.div
           variants={fadeUp}
@@ -179,7 +177,6 @@ const ScholarshipsPage: React.FC = () => {
                 <th className="px-6 py-4" />
               </tr>
             </thead>
-
             <motion.tbody
               variants={container}
               initial="hidden"
@@ -200,9 +197,18 @@ const ScholarshipsPage: React.FC = () => {
                       </span>
                     </td>
 
-                    <td className="px-6 py-4 text-gray-500 font-medium text-sm">
-                      {scholarship.startDate || "—"} —{" "}
-                      {scholarship.endDate || "—"}
+                    <td className="px-2 py-6 text-gray-500 font-medium text-sm">
+                      {scholarship.startDate
+                        ? new Date(scholarship.startDate).toLocaleDateString(
+                            "en-GB",
+                          )
+                        : "—"}{" "}
+                      —{" "}
+                      {scholarship.endDate
+                        ? new Date(scholarship.endDate).toLocaleDateString(
+                            "en-GB",
+                          )
+                        : "—"}
                     </td>
 
                     <td className="px-6 py-4">
@@ -219,7 +225,7 @@ const ScholarshipsPage: React.FC = () => {
 
                     <td className="px-6 py-4">
                       <Link
-                        to={`/scholarships/${scholarship.slug || scholarship.id}`}
+                        to={`/scholarships/${scholarship.id}`}
                         className="flex items-center gap-1 text-primary font-semibold no-underline hover:text-accent transition-colors text-sm w-fit group"
                       >
                         التفاصيل

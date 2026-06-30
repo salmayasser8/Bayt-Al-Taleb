@@ -132,12 +132,13 @@ const AuthPage: React.FC = () => {
   const onRegister = async (data: RegisterFormData) => {
     try {
       const json = await registerApi(data.email, data.password, data.name);
-      login(json.data.user, json.data.tokens.accessToken);
-      navigate("/");
-      toast({
-        title: "تم إنشاء الحساب",
-        description: `مرحباً ${json.data.user.fullName}`,
-      });
+      // login(json.data.user, json.data.tokens.accessToken);
+      // navigate("/");
+      // toast({
+      //   title: "تم إنشاء الحساب",
+      //   description: `مرحباً ${json.data.user.fullName}`,
+      // });
+      setIsLogin(true);
     } catch (err: any) {
       toast({
         variant: "destructive",

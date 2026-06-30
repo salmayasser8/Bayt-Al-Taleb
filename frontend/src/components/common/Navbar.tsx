@@ -7,6 +7,7 @@ import { FiLogOut } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
 import { MdAdminPanelSettings, MdKeyboardArrowDown } from "react-icons/md";
 import { RiDashboardLine } from "react-icons/ri";
+import { useLocation } from "react-router-dom";
 
 interface NavLinkConfig {
   label: string;
@@ -15,8 +16,7 @@ interface NavLinkConfig {
 
 const mainLinks: NavLinkConfig[] = [
   { label: "الرئيسية", path: "/" },
-  { label: "من نحن", path: "/about" },
-  { label: "تواصل معنا", path: "/contact" },
+  { label: "من نحن", path: "/#about" },
   { label: "التخصصات", path: "/colleges" },
 ];
 
@@ -47,7 +47,28 @@ const Navbar: React.FC = () => {
   const [isMobileProfileOpen, setIsMobileProfileOpen] = useState(false);
   const { user, logout, isAuthenticated } = useAuth();
   const navigate = useNavigate();
-
+  const location = useLocation();
+  const handleNavClick = (path: string, e: React.MouseEvent) => {
+    if (path.includes("#")) {
+      e.preventDefault();
+      const sectionId = path.split("#")[1];
+      if (!sectionId) return;
+      if (location.pathname === "/") {
+        // Already on home - just scroll
+        document
+          .getElementById(sectionId)
+          ?.scrollIntoView({ behavior: "smooth" });
+      } else {
+        // Navigate home first, then scroll after page loads
+        navigate("/");
+        setTimeout(() => {
+          document
+            .getElementById(sectionId)
+            ?.scrollIntoView({ behavior: "smooth" });
+        }, 300);
+      }
+    }
+  };
   const handleLogout = () => {
     logout();
     navigate("/");
@@ -130,6 +151,7 @@ const Navbar: React.FC = () => {
               <motion.li key={item.label} variants={linkItem}>
                 <NavLink
                   to={item.path}
+                  onClick={(e) => handleNavClick(item.path, e)}
                   className="text-paragraph hover:text-accent transition-colors text-lg no-underline font-semibold"
                 >
                   {item.label}

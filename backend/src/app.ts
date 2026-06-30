@@ -4,7 +4,10 @@ import { env } from './config/env.js';
 import { buildContainer } from './container.js';
 import type { Container } from './container.js';
 import { createApiRouter } from './routes.js';
-import { errorHandler, notFoundHandler } from './infrastructure/http/middlewares/error.middleware.js';
+import {
+  errorHandler,
+  notFoundHandler,
+} from './infrastructure/http/middlewares/error.middleware.js';
 
 /**
  * Creates the Express application.

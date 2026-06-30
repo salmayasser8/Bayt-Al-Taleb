@@ -1,5 +1,9 @@
 import type { ScholarshipsRepository } from './scholarships.repository.js';
-import type { CreateScholarshipInput, UpdateScholarshipInput, ListScholarshipsQuery } from './scholarships.validation.js';
+import type {
+  CreateScholarshipInput,
+  UpdateScholarshipInput,
+  ListScholarshipsQuery,
+} from './scholarships.validation.js';
 import type { ScholarshipDto } from './scholarships.dto.js';
 import { ConflictError, NotFoundError } from '../../shared/errors/app-error.js';
 import type { Scholarship } from '@prisma/client';
@@ -7,8 +11,14 @@ import type { Scholarship } from '@prisma/client';
 export class ScholarshipsService {
   constructor(private readonly repo: ScholarshipsRepository) {}
 
-  async list(query: ListScholarshipsQuery): Promise<{ items: ScholarshipDto[]; total: number; page: number; limit: number }> {
-    const { items, total } = await this.repo.findAll({ page: query.page, limit: query.limit, search: query.search });
+  async list(
+    query: ListScholarshipsQuery,
+  ): Promise<{ items: ScholarshipDto[]; total: number; page: number; limit: number }> {
+    const { items, total } = await this.repo.findAll({
+      page: query.page,
+      limit: query.limit,
+      search: query.search,
+    });
     return { items: items.map(this.#toDto), total, page: query.page, limit: query.limit };
   }
 
@@ -51,6 +61,15 @@ export class ScholarshipsService {
   }
 
   #toDto(s: Scholarship): ScholarshipDto {
-    return { id: s.id, slug: s.slug, name: s.name, isActive: s.isActive, createdAt: s.createdAt, updatedAt: s.updatedAt };
+    return {
+      id: s.id,
+      slug: s.slug,
+      name: s.name,
+      isActive: s.isActive,
+      startDate: s.startDate,
+      endDate: s.endDate,
+      createdAt: s.createdAt,
+      updatedAt: s.updatedAt,
+    };
   }
 }

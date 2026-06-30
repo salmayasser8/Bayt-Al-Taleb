@@ -178,7 +178,7 @@ const CollegeDetailPage: React.FC = () => {
                     >
                       <td className="px-6 py-4">
                         <Link
-                          to={`/majors/${major.slug}`}
+                          to={`/majors/${major.id}`}
                           className="text-primary font-semibold no-underline hover:text-accent transition-colors"
                         >
                           {major.name}

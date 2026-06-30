@@ -229,6 +229,8 @@ model Scholarship {
   updatedAt DateTime @updatedAt
   deletedAt    DateTime?
   deletedById  String?
+  startDate DateTime
+  endDate   DateTime
   deleteReason String?
 
   moderators User[] @relation("ScholarshipModerators")

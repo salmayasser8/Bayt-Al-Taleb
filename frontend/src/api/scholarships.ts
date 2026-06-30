@@ -13,8 +13,3 @@ export const getScholarshipSections = async (id: string) => {
   const res = await api.get(`/content/SCHOLARSHIP/${id}/sections`);
   return res.data;
 };
-
-export const getScholarshipFaqs = async (id: string) => {
-  const res = await api.get(`/content/SCHOLARSHIP/${id}/faqs`);
-  return res.data;
-};

@@ -11,6 +11,8 @@ import SupervisorReview from "../pages/SupervisorReview";
 import AdminPanel from "../pages/AdminPanel";
 import ScholarshipsPage from "../pages/ScholarshipsPage";
 import MajorDetailPage from "../pages/MajorDetailPage";
+import ScholarshipDetailPage from "../pages/ScolarshipsDetailsPage";
+// import CourseSummariesPage from "@/pages/CourseSummarize";
 const AppLayout = () => {
   return (
     <>
@@ -26,9 +28,15 @@ const AppLayout = () => {
             <Route path="/supervisor" element={<SupervisorReview />} />
             <Route path="/admin" element={<AdminPanel />} />
             <Route path="/scholarships" element={<ScholarshipsPage />} />
+            <Route
+              path="/scholarships/:id"
+              element={<ScholarshipDetailPage />}
+            />
             <Route path="/majors/:id" element={<MajorDetailPage />} />
           </Route>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/student-dashboard" element={<StudentDashboard />} />
+          {/* <Route path="/course-summaries" element={<CourseSummariesPage />} /> */}
         </Routes>
       </BrowserRouter>
     </>

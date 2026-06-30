@@ -2,16 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
 import { Link, useParams } from "react-router-dom";
 import { IoChevronBack } from "react-icons/io5";
-import { GrLinkPrevious } from "react-icons/gr";
-import {
-  FaChevronDown,
-  FaHospitalAlt,
-  FaUserNurse,
-  FaGraduationCap,
-  FaClinicMedical,
-  FaQuestion,
-} from "react-icons/fa";
-import { IoIosGitCompare } from "react-icons/io";
 import SideBar from "../components/common/SideBar";
 import { IoIosInformationCircleOutline } from "react-icons/io";
 import { GiGraduateCap } from "react-icons/gi";
@@ -25,7 +15,13 @@ import LoadingSpinner from "../components/common/LoadingSpinner";
 import { getMajorById } from "../api/majors.js";
 import { getMajorSections } from "../api/majors.js";
 import { getMajorFaqs } from "../api/majors.js";
-
+import OverviewSection from "../components/sections/MajorDetailPage/OverviewSection";
+import DegreesSection from "../components/sections/MajorDetailPage/DegreesSection";
+import UniversitiesSection from "../components/sections/MajorDetailPage/UniversitiesSection";
+import JobSection from "../components/sections/MajorDetailPage/JobSection";
+import SalariesSection from "../components/sections/MajorDetailPage/SalariesSection";
+import { FaQuestion } from "react-icons/fa";
+import { FaChevronDown } from "react-icons/fa";
 // ── Types ────────────────────────────────────────────────────────
 interface MajorView {
   id: string;
@@ -45,16 +41,6 @@ interface FaqView {
   question: string;
   answer: string;
 }
-
-// ── Icon Map (Converts string names from JSON to React components) ──
-const iconMap: Record<string, React.ReactNode> = {
-  FaHospitalAlt: <FaHospitalAlt size={28} />,
-  FaClinicMedical: <FaClinicMedical size={28} />,
-  FaUserNurse: <FaUserNurse size={28} />,
-  IoIosGitCompare: <IoIosGitCompare size={28} />,
-  FaGraduationCap: <FaGraduationCap size={28} />,
-};
-
 // ── Sidebar Nav ──────────────────────────────────────────────────
 const navItems = [
   {
@@ -69,8 +55,8 @@ const navItems = [
   },
   { id: "jobs", label: "سوق العمل", icon: <IoBagOutline size={25} /> },
   { id: "salaries", label: "الرواتب", icon: <CiMoneyBill size={25} /> },
-  { id: "scholarships", label: "المنح", icon: <CiGift size={25} /> },
   { id: "degrees", label: "الألقاب", icon: <GiAlliedStar size={25} /> },
+  { id: "scholarships", label: "المنح", icon: <CiGift size={25} /> },
   { id: "tips", label: "نصائح وأسئلة", icon: <FaQuestion size={25} /> },
 ];
 
@@ -178,163 +164,51 @@ const MajorDetailPage: React.FC = () => {
       parsedData = null;
     }
 
-    const sectionStyle =
-      "bg-white rounded-2xl border border-gray-200 p-6 shadow-sm";
-
     switch (section.title) {
       case "شرح عام":
         return (
-          <motion.section
-            ref={(el) => (sectionRefs.current["overview"] = el)}
-            id="overview"
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount: 0.2 }}
-            className={sectionStyle}
-          >
-            <h2 className="font-bold text-xl text-primary mb-4">
-              شرح عام عن التخصص
-            </h2>
-            <p className="text-gray-500 leading-relaxed">{section.content}</p>
-          </motion.section>
+          <OverviewSection
+            key={section.id}
+            content={section.content}
+            sectionRef={(el) => (sectionRefs.current["overview"] = el)}
+          />
         );
 
       case "universities":
         return (
-          <motion.section
-            ref={(el) => (sectionRefs.current["universities"] = el)}
-            id="universities"
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount: 0.1 }}
-            className={sectionStyle}
-          >
-            <h2 className="font-bold text-2xl text-primary mb-4">
-              أماكن التعليم
-            </h2>
-            <div className="flex flex-col gap-3">
-              {Array.isArray(parsedData) &&
-                parsedData.map((uni: any, i: number) => (
-                  <div
-                    key={i}
-                    className="flex items-center justify-between border border-gray-100 rounded-xl p-4 hover:bg-bgSection transition-colors"
-                  >
-                    <div>
-                      <h4 className="font-bold text-primary">{uni.name}</h4>
-                      <p className="text-gray-500 text-sm mt-1">
-                        {uni.location}
-                      </p>
-                    </div>
-                    <Link
-                      to={uni.link || "#"}
-                      className="flex items-center gap-1 text-primary font-semibold no-underline hover:text-accent transition-colors text-sm"
-                    >
-                      شروط القبول <GrLinkPrevious />
-                    </Link>
-                  </div>
-                ))}
-            </div>
-          </motion.section>
+          <UniversitiesSection
+            key={section.id}
+            content={section.content}
+            sectionRef={(el) => (sectionRefs.current["universities"] = el)}
+          />
         );
 
       case "jobs":
         return (
-          <motion.section
-            ref={(el) => (sectionRefs.current["jobs"] = el)}
-            id="jobs"
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount: 0.2 }}
-            className={sectionStyle}
-          >
-            <h2 className="font-bold text-2xl text-primary mb-4">
-              مجالات سوق العمل
-            </h2>
-            <div className="flex flex-col gap-3">
-              {Array.isArray(parsedData) &&
-                parsedData.map((job: any, i: number) => (
-                  <div
-                    key={i}
-                    className="flex items-center gap-3 border border-gray-100 rounded-xl p-4"
-                  >
-                    <span className="text-accent">
-                      {iconMap[job.icon] || <FaHospitalAlt size={28} />}
-                    </span>
-                    <span className="font-semibold text-primary">
-                      {job.label}
-                    </span>
-                  </div>
-                ))}
-            </div>
-          </motion.section>
+          <JobSection
+            key={section.id}
+            content={section.content}
+            sectionRef={(el) => (sectionRefs.current["jobs"] = el)}
+          />
         );
 
       case "salaries":
         return (
-          <motion.section
-            ref={(el) => (sectionRefs.current["salaries"] = el)}
-            id="salaries"
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount: 0.2 }}
-            className={sectionStyle}
-          >
-            <h2 className="font-bold text-2xl text-primary mb-4">
-              نطاق الرواتب المتوقع
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {Array.isArray(parsedData) &&
-                parsedData.map((sal: any, i: number) => (
-                  <div
-                    key={i}
-                    className="bg-bgSection rounded-xl p-5 text-center"
-                  >
-                    <h4 className="font-bold text-primary mb-2">{sal.level}</h4>
-                    <div className="font-bold text-2xl text-accent mb-2">
-                      {sal.range}
-                    </div>
-                    <p className="text-gray-500 text-sm">{sal.note}</p>
-                  </div>
-                ))}
-            </div>
-          </motion.section>
+          <SalariesSection
+            key={section.id}
+            content={section.content}
+            sectionRef={(el) => (sectionRefs.current["salaries"] = el)}
+          />
         );
 
       case "degrees":
         return (
-          <motion.section
-            ref={(el) => (sectionRefs.current["degrees"] = el)}
-            id="degrees"
-            variants={fadeUp}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: false, amount: 0.2 }}
-            className={sectionStyle}
-          >
-            <h2 className="font-bold text-2xl text-primary mb-4">
-              الألقاب والدرجات العلمية
-            </h2>
-            <p className="text-gray-500 mb-4">
-              عند التخرج يحصل الطالب على{" "}
-              <span className="font-bold text-primary">
-                {major?.degree || "درجة علمية"}
-              </span>
-              . تفتح هذه الدرجة الباب للتخصص في:
-            </p>
-            <ul className="flex flex-col gap-2">
-              {Array.isArray(parsedData) &&
-                parsedData.map((spec: string, i: number) => (
-                  <li key={i} className="flex items-center gap-2 text-gray-500">
-                    <span className="w-2 h-2 rounded-full bg-accent flex-shrink-0" />
-                    {spec}
-                  </li>
-                ))}
-            </ul>
-          </motion.section>
+          <DegreesSection
+            key={section.id}
+            degree={major?.degree}
+            content={section.content}
+            sectionRef={(el: any) => (sectionRefs.current["degrees"] = el)}
+          />
         );
 
       default:
@@ -463,6 +337,12 @@ const MajorDetailPage: React.FC = () => {
                 )}
               </div>
             </motion.section>
+            {/* Dynamic FAQs from Postman */}
+            {/* <TipsSection
+              sections={sections}
+              faqs={faqs}
+              sectionRef={(el) => (sectionRefs.current["tips"] = el)}
+            /> */}
           </div>
 
           <SideBar

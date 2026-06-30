@@ -144,7 +144,12 @@ interface StatCardProps {
   colorClass: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, icon, colorClass }) => (
+const StatCard: React.FC<StatCardProps> = ({
+  label,
+  value,
+  icon,
+  colorClass,
+}) => (
   <motion.div
     variants={fadeUp}
     className="bg-white rounded-2xl border border-gray-200 p-5 flex items-center gap-4 shadow-sm"
@@ -223,9 +228,7 @@ const PreviewModal: React.FC<PreviewModalProps> = ({
 
       {file.description && (
         <div className="bg-bgSection rounded-xl p-4 mb-6">
-          <p className="text-gray-500 text-xs font-semibold mb-1">
-            وصف الملف
-          </p>
+          <p className="text-gray-500 text-xs font-semibold mb-1">وصف الملف</p>
           <p className="text-primary font-semibold text-sm">
             {file.description}
           </p>
@@ -285,14 +288,14 @@ const SupervisorReview: React.FC = () => {
   const handleApprove = (id: number) => {
     // TODO: await api.supervisor.approveFile(id)
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: "approved" } : f))
+      prev.map((f) => (f.id === id ? { ...f, status: "approved" } : f)),
     );
   };
 
   const handleReject = (id: number) => {
     // TODO: await api.supervisor.rejectFile(id, reason)
     setFiles((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, status: "rejected" } : f))
+      prev.map((f) => (f.id === id ? { ...f, status: "rejected" } : f)),
     );
   };
 
