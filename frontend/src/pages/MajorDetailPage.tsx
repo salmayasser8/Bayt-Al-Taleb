@@ -171,6 +171,7 @@ const MajorDetailPage: React.FC = () => {
             key={section.id}
             content={section.content}
             sectionRef={(el) => (sectionRefs.current["overview"] = el)}
+            majorId={major?.id || ""}
           />
         );
 

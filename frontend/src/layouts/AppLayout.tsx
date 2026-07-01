@@ -12,7 +12,7 @@ import AdminPanel from "../pages/AdminPanel";
 import ScholarshipsPage from "../pages/ScholarshipsPage";
 import MajorDetailPage from "../pages/MajorDetailPage";
 import ScholarshipDetailPage from "../pages/ScolarshipsDetailsPage";
-// import CourseSummariesPage from "@/pages/CourseSummarize";
+import CourseSummariesPage from "../pages/CourseSummarizePage";
 const AppLayout = () => {
   return (
     <>
@@ -36,7 +36,10 @@ const AppLayout = () => {
           </Route>
           <Route path="/auth" element={<Auth />} />
           <Route path="/student-dashboard" element={<StudentDashboard />} />
-          {/* <Route path="/course-summaries" element={<CourseSummariesPage />} /> */}
+          <Route
+            path="/majors/:id/summaries"
+            element={<CourseSummariesPage />}
+          />
         </Routes>
       </BrowserRouter>
     </>

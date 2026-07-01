@@ -17,7 +17,7 @@ interface NavLinkConfig {
 const mainLinks: NavLinkConfig[] = [
   { label: "الرئيسية", path: "/" },
   { label: "من نحن", path: "/#about" },
-  { label: "التخصصات", path: "/colleges" },
+  { label: "الاختصاصات", path: "/colleges" },
 ];
 
 const navVariants: Variants = {
