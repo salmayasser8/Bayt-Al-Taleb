@@ -4,6 +4,10 @@ import type { FileOwnerType, FileStatus, FileType } from '@prisma/client';
  * The domain view of a file — what services and controllers work with.
  * Never exposes raw Prisma models outside the repository layer.
  */
+/**
+ * The domain view of a file — what services and controllers work with.
+ * Never exposes raw Prisma models outside the repository layer.
+ */
 export interface FileView {
   id: string;
   title: string;
@@ -13,9 +17,16 @@ export interface FileView {
   storageKey: string;
   mimeType: string | null;
   sizeBytes: number | null;
+  tags: string[];
+  rating: number;
+  downloads: number;
   ownerType: FileOwnerType;
   ownerId: string;
   uploadedById: string;
+  uploadedBy?: {
+    id: string;
+    fullName: string;
+  } | null;
   createdAt: Date;
   updatedAt: Date;
   deletedAt: Date | null;

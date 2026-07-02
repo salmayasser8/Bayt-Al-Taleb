@@ -1,15 +1,5 @@
 // ════════════════════════════════════════════════════════════════════════
 //  Bayt Al Taleb (بيت الطالب) — Prisma Schema
-//  Foundation schema. Supports: RBAC, polymorphic content (Section/FAQ),
-//  and the file upload → review workflow.
-//
-//  Design notes:
-//   - RBAC uses a Role table + RolePermission join so permissions are data,
-//     not hard-coded enums. A `RoleName` enum seeds the five canonical roles.
-//   - Polymorphic content: ONE `Section` table and ONE `Faq` table serve all
-//     entity types via (entityType, entityId). NO MajorSections /
-//     ScholarshipSections tables — exactly one generic system.
-//   - File workflow: File.status drives state; FileReview is the audit trail.
 // ════════════════════════════════════════════════════════════════════════
 
 generator client {
@@ -24,8 +14,6 @@ datasource db {
 
 // ───────────────────────────── Enums ─────────────────────────────
 
-/// Canonical roles. Used to seed the Role table; the actual authorization
-/// decisions read from Role + RolePermission so new roles need no code change.
 enum RoleName {
   SUPER_ADMIN
   ADMIN
@@ -34,19 +22,16 @@ enum RoleName {
   VISITOR
 }
 
-/// The kind of entity a polymorphic Section / Faq attaches to.
-/// Extend this enum (e.g. COURSE, JOB) to reuse the content system elsewhere.
 enum ContentEntityType {
   MAJOR
   SCHOLARSHIP
 }
 
-/// The kind of entity a file belongs to. Mirrors the polymorphic strategy of
-/// ContentEntityType — extend this enum (e.g. COURSE, JOB) to attach files to
-/// new owner types without new tables or schema redesign.
+/// ADDED COURSE HERE
 enum FileOwnerType {
   MAJOR
   SCHOLARSHIP
+  COURSE 
 }
 
 enum FileType {
@@ -67,8 +52,6 @@ enum ReviewAction {
   REJECT
 }
 
-/// Actions recorded in the audit log. CREATE/UPDATE/DELETE/RESTORE cover the
-/// soft-delete lifecycle; APPROVE/REJECT cover the file review workflow.
 enum AuditAction {
   CREATE
   UPDATE
@@ -78,15 +61,13 @@ enum AuditAction {
   REJECT
 }
 
-/// Entity kinds that participate in soft delete / the deleted-items queue and
-/// are referenced by audit logs. A superset that also covers non-soft-deletable
-/// audited entities is fine — this enum is the audit/queue vocabulary.
 enum AuditEntityType {
   MAJOR
   SCHOLARSHIP
   FILE
   SECTION
   FAQ
+  COURSE // ADDED COURSE HERE
 }
 
 // ───────────────────────────── RBAC ──────────────────────────────
@@ -104,8 +85,6 @@ model Role {
   @@map("roles")
 }
 
-/// A permission is a stable string key, e.g. "files:approve", "majors:manage".
-/// Storing permissions as data keeps RBAC extensible without migrations.
 model Permission {
   id          String   @id @default(cuid())
   key         String   @unique
@@ -149,7 +128,6 @@ model User {
   auditLogs     AuditLog[]     @relation("AuditActor")
   notifications Notification[]
 
-  // Moderators are assigned to specific majors / scholarships.
   assignedMajors       Major[]       @relation("MajorModerators")
   assignedScholarships Scholarship[] @relation("ScholarshipModerators")
 
@@ -157,7 +135,6 @@ model User {
   @@map("users")
 }
 
-/// Persisted refresh tokens enable rotation & server-side logout/revocation.
 model RefreshToken {
   id        String    @id @default(cuid())
   userId    String
@@ -173,11 +150,7 @@ model RefreshToken {
 }
 
 // ─────────────────────── Domain: Colleges / Majors / Scholarships ─
-// These tables hold ONLY identity/metadata. All rich, template-style
-// content lives in the polymorphic Section / Faq tables below — content
-// stays attached to majors, never to colleges.
 
-/// A college groups many majors (e.g. Engineering → Civil, Architecture).
 model College {
   id          String   @id @default(cuid())
   slug        String   @unique
@@ -202,24 +175,43 @@ model Major {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  // Optional parent college. Nullable so existing flat majors keep working;
-  // assigning a college groups the major under it (One College → Many Majors).
   collegeId String?
   college   College? @relation(fields: [collegeId], references: [id])
 
-  // Soft delete — a non-null deletedAt hides the row from public APIs and
-  // places it in the deleted-items queue. The row is never physically removed
-  // until a Super Admin permanently deletes it.
   deletedAt    DateTime?
   deletedById  String?
   deleteReason String?
 
   moderators User[] @relation("MajorModerators")
+  
+  // ADDED COURSES RELATION HERE
+  courses Course[]
 
   @@index([deletedAt])
   @@index([collegeId])
   @@map("majors")
 }
+
+// ═══════════════════════════════════════════════════════════════════
+// ADDED NEW COURSE MODEL HERE
+// ═══════════════════════════════════════════════════════════════════
+model Course {
+  id          String   @id @default(cuid())
+  name        String   // English name
+  nameAr      String   // Arabic name
+  code        String   // e.g. CS201
+  year        Int      // e.g. 2
+  semester    String   // e.g. Fall, Spring
+  credits     Int      // e.g. 3
+  icon        String   @default("📘") // Emoji
+
+  majorId String
+  major   Major  @relation(fields: [majorId], references: [id], onDelete: Cascade)
+
+  @@index([majorId])
+  @@map("courses")
+}
+// ═══════════════════════════════════════════════════════════════════
 
 model Scholarship {
   id        String   @id @default(cuid())
@@ -241,10 +233,6 @@ model Scholarship {
 }
 
 // ─────────────────── Polymorphic Content System ──────────────────
-// ONE Section table + ONE Faq table for ALL entity types.
-// Referential integrity to the owning row is enforced in the service
-// layer (polymorphic FKs are not expressible in SQL). The (entityType,
-// entityId) composite index keeps lookups fast.
 
 model Section {
   id         String            @id @default(cuid())
@@ -293,15 +281,19 @@ model File {
   description  String?
   type         FileType
   status       FileStatus @default(PENDING)
-  storageKey   String // path / object key in the storage backend
+  storageKey   String 
   mimeType     String?
   sizeBytes    Int?
+  
+  // ── ADDED NEW FIELDS FOR THE UI ──
+  tags         String[]   // Array of tags
+  rating       Float      @default(0) // Average rating (0 to 5)
+  downloads    Int        @default(0) // Download counter
+  // ─────────────────────────────────
+
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  // Polymorphic owner — every file belongs to exactly one domain entity
-  // (major, scholarship, …). Same strategy as Section/Faq: no per-owner
-  // tables, no nullable FKs. Existence is enforced in the service layer.
   ownerType    FileOwnerType
   ownerId      String
 
@@ -355,9 +347,6 @@ model ContactMessage {
 }
 
 // ───────────────────────────── Audit Log ─────────────────────────
-// Centralized, append-only record of every important action. Written ONLY
-// through AuditService. `metadata` is free-form JSON (e.g. changed fields,
-// previous status). Never updated or deleted in normal operation.
 
 model AuditLog {
   id         String          @id @default(cuid())
@@ -379,9 +368,6 @@ model AuditLog {
 }
 
 // ─────────────────────────── Notifications ───────────────────────
-// In-app notifications delivered to a specific user. Created by
-// NotificationService (directly or auto-triggered by review/restore/role
-// changes). No emails/push — purely in-app for now.
 
 model Notification {
   id        String   @id @default(cuid())

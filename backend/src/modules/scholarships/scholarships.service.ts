@@ -6,7 +6,7 @@ import type {
 } from './scholarships.validation.js';
 import type { ScholarshipDto } from './scholarships.dto.js';
 import { ConflictError, NotFoundError } from '../../shared/errors/app-error.js';
-import type { Scholarship } from '@prisma/client';
+import type { Scholarship, ContentEntityType, FileOwnerType } from '@prisma/client';
 
 export class ScholarshipsService {
   constructor(private readonly repo: ScholarshipsRepository) {}
@@ -52,12 +52,17 @@ export class ScholarshipsService {
     await this.repo.softDelete(id, deletedById, deleteReason);
   }
 
-  async exists(id: string): Promise<boolean> {
+  async exists(entityType: ContentEntityType | string, id?: string): Promise<boolean> {
+    if (id === undefined) {
+      return (await this.repo.findById(entityType as string)) !== null;
+    }
+    if (entityType !== 'SCHOLARSHIP') return false;
     return (await this.repo.findById(id)) !== null;
   }
 
-  async fileOwnerExists(ownerId: string): Promise<boolean> {
-    return this.exists(ownerId);
+  async fileOwnerExists(ownerType: FileOwnerType, ownerId: string): Promise<boolean> {
+    if (ownerType !== 'SCHOLARSHIP') return false;
+    return (await this.repo.findById(ownerId)) !== null;
   }
 
   #toDto(s: Scholarship): ScholarshipDto {

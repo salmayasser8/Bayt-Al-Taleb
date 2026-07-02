@@ -28,6 +28,9 @@ export class FilesRepository implements SoftDeletableRepository {
       storageKey: row.storageKey,
       mimeType: row.mimeType ?? null,
       sizeBytes: row.sizeBytes ?? null,
+      tags: row.tags,
+      rating: row.rating,
+      downloads: row.downloads,
       ownerType: row.ownerType,
       ownerId: row.ownerId,
       uploadedById: row.uploadedById,
@@ -118,21 +121,65 @@ export class FilesRepository implements SoftDeletableRepository {
   /**
    * Approved non-deleted files for a specific owner (ownerType + ownerId).
    */
+  // Inside modules/files/files.repository.ts
+
+  /**
+   * Approved non-deleted files for a specific owner (ownerType + ownerId).
+   */
   async findApprovedByOwner(ownerType: FileOwnerType, ownerId: string): Promise<FileView[]> {
     const rows = await this.db.file.findMany({
-      where: { ownerType, ownerId, status: FileStatus.APPROVED, ...notDeleted },
+      where: {
+        ownerType,
+        ownerId,
+        status: FileStatus.APPROVED,
+        deletedAt: null,
+      },
+      include: {
+        uploadedBy: {
+          select: { id: true, fullName: true },
+        },
+      },
       orderBy: { createdAt: 'desc' },
     });
-    return rows.map((r) => this.toView(r));
-  }
 
+    // Map manually because 'include' changes the Prisma type
+    return rows.map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      type: row.type,
+      status: row.status,
+      storageKey: row.storageKey,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
+
+      // ⬇️ NEW FIELDS ⬇️
+      tags: row.tags,
+      rating: row.rating,
+      downloads: row.downloads,
+      // ⬆️ NEW FIELDS ⬆️
+
+      ownerType: row.ownerType,
+      ownerId: row.ownerId,
+      uploadedById: row.uploadedById,
+
+      // ⬇️ UPLOADER OBJECT ⬇️
+      uploadedBy: row.uploadedBy
+        ? {
+            id: row.uploadedBy.id,
+            fullName: row.uploadedBy.fullName,
+          }
+        : null,
+      // ⬆️ UPLOADER OBJECT ⬆️
+
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      deletedAt: row.deletedAt,
+    })) as FileView[];
+  }
   // ── SoftDeletableRepository ────────────────────────────────────────────────
 
-  async softDelete(
-    id: string,
-    deletedById: string,
-    reason: string | null,
-  ): Promise<boolean> {
+  async softDelete(id: string, deletedById: string, reason: string | null): Promise<boolean> {
     const existing = await this.db.file.findFirst({
       where: { id, ...notDeleted },
     });

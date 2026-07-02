@@ -1,5 +1,8 @@
 import { Router, type RequestHandler } from 'express';
-import { requirePermission, requireAnyPermission } from '../../infrastructure/http/middlewares/role.guard.js';
+import {
+  requirePermission,
+  requireAnyPermission,
+} from '../../infrastructure/http/middlewares/role.guard.js';
 import { validate } from '../../infrastructure/http/middlewares/validate.js';
 import { deleteReasonBodySchema } from '../../shared/soft-delete/delete-reason.schema.js';
 import type { FilesController } from './files.controller.js';
@@ -9,13 +12,6 @@ import {
   listFilesQuerySchema,
 } from './files.validation.js';
 
-/**
- * Build the Express router for the /files resource.
- *
- * @param controller      The FilesController instance.
- * @param authenticate    The `authenticate(tokenService)` RequestHandler from the DI container.
- * @param uploadMiddleware  Pre-built `createUploadMiddleware(maxMb)` for multipart handling.
- */
 export function createFilesRouter(
   controller: FilesController,
   authenticate: RequestHandler,
@@ -23,8 +19,11 @@ export function createFilesRouter(
 ): Router {
   const router = Router();
 
+  // ⬇️ PUBLIC ROUTE (No auth required) - Moved to the top! ⬇️
+  router.get('/owner/:ownerType/:ownerId/approved', controller.getApprovedByOwner.bind(controller));
+  // ⬆️ PUBLIC ROUTE ⬆️
+
   // POST / — multipart upload
-  // uploadMiddleware MUST run before validate so body fields are parsed from multipart.
   router.post(
     '/',
     authenticate,
@@ -34,7 +33,7 @@ export function createFilesRouter(
     controller.upload.bind(controller),
   );
 
-  // GET / — paginated list
+  // GET / — paginated list (Protected)
   router.get(
     '/',
     authenticate,
@@ -42,23 +41,16 @@ export function createFilesRouter(
     validate({ query: listFilesQuerySchema }),
     controller.list.bind(controller),
   );
-<<<<<<< HEAD
-  router.get(
-  '/owner/:ownerType/:ownerId',
-  authenticate,
-  requirePermission('files:read'),
-  controller.getByOwner.bind(controller),
-);
-router.get(
-  '/owner/:ownerType/:ownerId/approved',
-  authenticate,
-  requirePermission('files:read'),
-  controller.getApprovedByOwner.bind(controller),
-);
-=======
 
->>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
-  // GET /:fileId/download — BEFORE /:fileId so Express matches the literal first
+  // GET /owner/:ownerType/:ownerId (Protected)
+  router.get(
+    '/owner/:ownerType/:ownerId',
+    authenticate,
+    requirePermission('files:read'),
+    controller.getByOwner.bind(controller),
+  );
+
+  // GET /:fileId/download — BEFORE /:fileId
   router.get(
     '/:fileId/download',
     authenticate,
@@ -75,10 +67,7 @@ router.get(
     validate({ params: fileIdParamsSchema }),
     controller.getById.bind(controller),
   );
-<<<<<<< HEAD
-=======
 
->>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   // DELETE /:fileId — soft delete
   router.delete(
     '/:fileId',

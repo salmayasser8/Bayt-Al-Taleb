@@ -8,10 +8,7 @@ import type { FilesService } from './files.service.js';
 import { toFileDto } from './files.dto.js';
 import type { UploadFileMetaInput, ListFilesQuery } from './files.validation.js';
 import type { FileListFilter } from './files.types.js';
-<<<<<<< HEAD
 import { FileOwnerType } from '@prisma/client';
-=======
->>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
 
 /**
  * FilesController — thin HTTP adapter over FilesService.
@@ -96,7 +93,6 @@ export class FilesController {
     res.setHeader('Content-Disposition', `attachment; filename="${file.fileName}"`);
     res.send(file.buffer);
   });
-<<<<<<< HEAD
   // getOwner of file
  /**
  * GET /files/owner/:ownerType/:ownerId
@@ -135,9 +131,6 @@ getApprovedByOwner = asyncHandler(async (req: Request, res: Response) => {
     ),
   );
 });
-=======
-
->>>>>>> 1bae0a3c67aa558fc237149f63cf29bb55cec679
   /**
    * DELETE /files/:fileId — soft-delete a file.
    * Optional body: { reason?: string }.
