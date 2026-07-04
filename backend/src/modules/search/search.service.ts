@@ -1,19 +1,48 @@
-import type { SearchProvider, SearchResults, SearchableType } from './search.types.js';
-import type { SearchQueryInput } from './search.validation.js';
+import type { Database } from '../../infrastructure/database/prisma.js';
 
-/**
- * SearchService — thin orchestration over a pluggable SearchProvider.
- * Normalizes the query and delegates to the injected provider.
- */
 export class SearchService {
-  constructor(private readonly provider: SearchProvider) {}
+  constructor(private readonly db: Database) {}
 
-  async search(input: SearchQueryInput): Promise<SearchResults> {
-    return this.provider.search({
-      term:     input.q.trim(),
-      types:    input.types as SearchableType[] | undefined,
-      page:     input.page,
-      pageSize: input.pageSize,
+  async globalSearch(query: string) {
+    if (!query || query.trim().length === 0) {
+      return { majors: [], scholarships: [], colleges: [], total: 0 };
+    }
+
+    const searchTerm = query.trim();
+
+    // Search Majors
+    const majors = await this.db.major.findMany({
+      where: {
+        name: { contains: searchTerm, mode: 'insensitive' },
+        deletedAt: null,
+        isActive: true,
+      },
+      take: 20,
     });
+
+    // Search Scholarships
+    const scholarships = await this.db.scholarship.findMany({
+      where: {
+        name: { contains: searchTerm, mode: 'insensitive' },
+        deletedAt: null,
+        isActive: true,
+      },
+      take: 20,
+    });
+
+    const colleges = await this.db.college.findMany({
+      where: {
+        name: { contains: searchTerm, mode: 'insensitive' },
+        isActive: true,
+      },
+      take: 20,
+    });
+
+    return {
+      majors,
+      scholarships,
+      colleges,
+      total: majors.length + scholarships.length + colleges.length,
+    };
   }
 }

@@ -13,6 +13,7 @@ import ScholarshipsPage from "../pages/ScholarshipsPage";
 import MajorDetailPage from "../pages/MajorDetailPage";
 import ScholarshipDetailPage from "../pages/ScolarshipsDetailsPage";
 import CourseSummariesPage from "../pages/CourseSummarizePage";
+import SearchResultPage from "../pages/SearchResultPage";
 const AppLayout = () => {
   return (
     <>
@@ -33,13 +34,14 @@ const AppLayout = () => {
               element={<ScholarshipDetailPage />}
             />
             <Route path="/majors/:id" element={<MajorDetailPage />} />
+            <Route
+              path="/majors/:id/summaries"
+              element={<CourseSummariesPage />}
+            />
+            <Route path="/student-dashboard" element={<StudentDashboard />} />
+            <Route path="/search" element={<SearchResultPage />} />
           </Route>
           <Route path="/auth" element={<Auth />} />
-          <Route path="/student-dashboard" element={<StudentDashboard />} />
-          <Route
-            path="/majors/:id/summaries"
-            element={<CourseSummariesPage />}
-          />
         </Routes>
       </BrowserRouter>
     </>

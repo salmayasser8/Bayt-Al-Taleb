@@ -173,8 +173,7 @@ export function buildContainer(db: Database = prisma): Container {
   const filesController = new FilesController(filesService, storageProvider);
 
   // ── Search ────────────────────────────────────────────────
-  const searchProvider = new PostgresSearchProvider(db);
-  const searchService = new SearchService(searchProvider);
+  const searchService = new SearchService(db);
   const searchController = new SearchController(searchService);
 
   // ── Notifications ─────────────────────────────────────────────
