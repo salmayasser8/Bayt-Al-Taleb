@@ -242,35 +242,6 @@ const AuthPage: React.FC = () => {
                         ? "جارٍ تسجيل الدخول..."
                         : "تسجيل الدخول"}
                     </motion.button>
-
-                    {/* Divider */}
-                    <div className="flex items-center gap-3 my-5">
-                      <div className="flex-1 h-px bg-border" />
-                      <span className="text-primary text-sm">أو تابع عبر</span>
-                      <div className="flex-1 h-px bg-border" />
-                    </div>
-
-                    {/* Social buttons */}
-                    <div className="flex gap-3">
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="flex-1 flex items-center justify-center gap-2 border border-gray-300 rounded-xl py-3 font-semibold text-primary hover:border-primary transition-colors"
-                      >
-                        <FcGoogle size={20} />
-                        Google
-                      </motion.button>
-                      <motion.button
-                        type="button"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                        className="flex-1 flex items-center justify-center gap-2 border border-gray-300 rounded-xl py-3 font-semibold text-primary hover:border-primary transition-colors"
-                      >
-                        <TfiMicrosoftAlt size={20} color="#00a1f1" />
-                        Microsoft
-                      </motion.button>
-                    </div>
                   </form>
                 </motion.div>
               ) : (
