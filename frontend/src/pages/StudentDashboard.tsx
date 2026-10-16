@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -11,91 +11,56 @@ import {
   FiDownload,
   FiUser,
 } from "react-icons/fi";
-import { MdMedicalServices } from "react-icons/md";
-
+import { useAuth } from "@/store/AuthContext";
+import { getMyFiles } from "@/api/files";
+import LoadingSpinner from "@/components/common/LoadingSpinner";
+import { FaFolderOpen } from "react-icons/fa";
+import { PiHandWavingFill } from "react-icons/pi";
+import api from "@/api/axios";
 // ── Types ─────────────────────────────────────────────────────────────────────
 
-type FileStatus = "pending" | "approved" | "rejected";
+type FileStatus = "PENDING" | "APPROVED" | "REJECTED";
 
 interface UploadedFile {
-  id: number;
-  name: string;
-  course: string;
-  college: string;
-  uploadedAt: string;
+  id: string;
+  title: string;
+  type: string;
+  createdAt: string;
   status: FileStatus;
-  size: string;
+  sizeBytes: number;
+  ownerType: string;
+  ownerId: string;
 }
 
-interface StudentInfo {
-  name: string;
-  college: string;
-  major: string;
-  joinedAt: string;
-  avatar: string;
-}
+// ── Helpers ───────────────────────────────────────────────────────────────────
 
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-// TODO: replace with API calls → api.student.getProfile() / api.files.getMyFiles()
-
-const mockStudent: StudentInfo = {
-  name: "أحمد محمد علي",
-  college: "كلية الطب والصحة",
-  major: "الطب العام",
-  joinedAt: "يناير 2024",
-  avatar: "أ",
+const fileTypeLabel: Record<string, string> = {
+  SUMMARY: "ملخص شامل",
+  PREVIOUS_EXAM: "أسئلة تدريبية",
+  SYLLABUS: "خطة مساق",
+  OTHER: "ملف آخر",
 };
 
-const mockFiles: UploadedFile[] = [
-  {
-    id: 1,
-    name: "ملخص علم الأحياء - الفصل الأول",
-    course: "علم الأحياء العام",
-    college: "الطب والصحة",
-    uploadedAt: "١٠ يونيو ٢٠٢٤",
-    status: "approved",
-    size: "٢.٣ ميجابايت",
-  },
-  {
-    id: 2,
-    name: "مذكرة الكيمياء العضوية",
-    course: "الكيمياء العضوية",
-    college: "الطب والصحة",
-    uploadedAt: "٥ يونيو ٢٠٢٤",
-    status: "pending",
-    size: "١.٨ ميجابايت",
-  },
-  {
-    id: 3,
-    name: "أسئلة الفيزياء الطبية",
-    course: "الفيزياء الطبية",
-    college: "الطب والصحة",
-    uploadedAt: "١ يونيو ٢٠٢٤",
-    status: "rejected",
-    size: "٩٨٠ كيلوبايت",
-  },
-  {
-    id: 4,
-    name: "ملخص علم التشريح - الجهاز الهضمي",
-    course: "علم التشريح",
-    college: "الطب والصحة",
-    uploadedAt: "٢٥ مايو ٢٠٢٤",
-    status: "approved",
-    size: "٣.١ ميجابايت",
-  },
-  {
-    id: 5,
-    name: "بحث في علم الأدوية",
-    course: "علم الصيدلة",
-    college: "الطب والصحة",
-    uploadedAt: "٢٠ مايو ٢٠٢٤",
-    status: "pending",
-    size: "٤.٥ ميجابايت",
-  },
-];
+const formatSize = (bytes: number) => {
+  if (!bytes) return "0 كيلوبايت";
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} كيلوبايت`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} ميجابايت`;
+};
 
 // ── Animation Variants ────────────────────────────────────────────────────────
-
+const cardPopUp: Variants = {
+  hidden: { opacity: 0, scale: 0.8 },
+  visible: {
+    opacity: 1,
+    scale: 1,
+    transition: {
+      type: "spring",
+      stiffness: 100,
+      damping: 15,
+      duration: 0.6,
+    },
+  },
+};
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
@@ -112,19 +77,17 @@ const statusConfig: Record<
   FileStatus,
   { label: string; icon: React.ReactNode; className: string }
 > = {
-  approved: {
+  APPROVED: {
     label: "معتمد",
     icon: <FiCheckCircle size={14} />,
-    className:
-      "bg-green-100 text-green-700 border border-green-200",
+    className: "bg-green-100 text-green-700 border border-green-200",
   },
-  pending: {
+  PENDING: {
     label: "قيد المراجعة",
     icon: <FiClock size={14} />,
-    className:
-      "bg-yellow-100 text-yellow-700 border border-yellow-200",
+    className: "bg-yellow-100 text-yellow-700 border border-yellow-200",
   },
-  rejected: {
+  REJECTED: {
     label: "مرفوض",
     icon: <FiXCircle size={14} />,
     className: "bg-red-100 text-red-700 border border-red-200",
@@ -140,10 +103,17 @@ interface StatCardProps {
   colorClass: string;
 }
 
-const StatCard: React.FC<StatCardProps> = ({ label, value, icon, colorClass }) => (
+const StatCard: React.FC<StatCardProps> = ({
+  label,
+  value,
+  icon,
+  colorClass,
+}) => (
   <motion.div
-    variants={fadeUp}
-    className="bg-white rounded-2xl border border-gray-200 p-6 flex items-center gap-4 shadow-sm"
+    variants={cardPopUp}
+    whileHover={{ y: -8 }}
+    transition={{ duration: 0.3 }}
+    className="bg-white rounded-2xl border border-gray-200 p-6 flex items-center gap-4 shadow-sm hover:border-primary"
   >
     <div className={`p-3 rounded-xl ${colorClass}`}>{icon}</div>
     <div>
@@ -156,25 +126,77 @@ const StatCard: React.FC<StatCardProps> = ({ label, value, icon, colorClass }) =
 // ── Main Component ────────────────────────────────────────────────────────────
 
 const StudentDashboard: React.FC = () => {
+  const { user } = useAuth();
   const [activeFilter, setActiveFilter] = useState<FileStatus | "all">("all");
+  const [files, setFiles] = useState<UploadedFile[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchFiles = async () => {
+      if (!user) return;
+      try {
+        const data = await getMyFiles(user.id);
+        const resolvedFiles = Array.isArray(data?.items)
+          ? data.items
+          : Array.isArray(data?.data?.items)
+            ? data.data.items
+            : Array.isArray(data?.data)
+              ? data.data
+              : Array.isArray(data)
+                ? data
+                : [];
+        setFiles(resolvedFiles);
+      } catch (error) {
+        console.error("Failed to fetch files", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    fetchFiles();
+  }, [user]);
+
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-bgSection flex items-center justify-center">
+        <LoadingSpinner />
+      </div>
+    );
+  }
+
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .substring(0, 2)
+      .toUpperCase();
 
   const stats = {
-    total: mockFiles.length,
-    approved: mockFiles.filter((f) => f.status === "approved").length,
-    pending: mockFiles.filter((f) => f.status === "pending").length,
-    rejected: mockFiles.filter((f) => f.status === "rejected").length,
+    total: files.length,
+    approved: files.filter((f) => f.status === "APPROVED").length,
+    pending: files.filter((f) => f.status === "PENDING").length,
+    rejected: files.filter((f) => f.status === "REJECTED").length,
   };
-
+  const handleDownload = async (fileId: string) => {
+    const res = await api.get(`/files/${fileId}/download`, {
+      responseType: "blob",
+    });
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "file.pdf";
+    a.click();
+  };
   const filtered =
     activeFilter === "all"
-      ? mockFiles
-      : mockFiles.filter((f) => f.status === activeFilter);
+      ? files
+      : files.filter((f) => f.status === activeFilter);
 
   const filterTabs: { key: FileStatus | "all"; label: string }[] = [
     { key: "all", label: "الكل" },
-    { key: "approved", label: "معتمد" },
-    { key: "pending", label: "قيد المراجعة" },
-    { key: "rejected", label: "مرفوض" },
+    { key: "APPROVED", label: "معتمد" },
+    { key: "PENDING", label: "قيد المراجعة" },
+    { key: "REJECTED", label: "مرفوض" },
   ];
 
   return (
@@ -188,11 +210,12 @@ const StudentDashboard: React.FC = () => {
           className="mb-8 flex flex-col md:flex-row md:items-center md:justify-between gap-4"
         >
           <div>
-            <h1 className="font-bold text-3xl md:text-4xl text-primary mb-1">
-              مرحباً، {mockStudent.name} 👋
+            <h1 className="font-bold text-2xl md:text-4xl text-primary mb-1">
+              مرحباً، {user?.fullName}
+              <PiHandWavingFill className="inline-block mr-2 text-accent" />
             </h1>
             <p className="text-gray-500 font-semibold">
-              {mockStudent.college} · {mockStudent.major}
+              عضو في المنصة الأكاديمية
             </p>
           </div>
           <Link to="/upload">
@@ -211,34 +234,32 @@ const StudentDashboard: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 mb-10">
           {/* Profile */}
           <motion.div
-            variants={fadeUp}
+            variants={cardPopUp}
             initial="hidden"
             animate="visible"
             className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6 flex flex-col items-center text-center"
           >
             <div className="w-20 h-20 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-4xl mb-4">
-              {mockStudent.avatar}
+              {getInitials(user?.fullName || "?")}
             </div>
             <h2 className="font-bold text-xl text-primary mb-1">
-              {mockStudent.name}
+              {user?.fullName}
             </h2>
             <p className="text-gray-500 text-sm font-semibold mb-1">
-              {mockStudent.college}
+              {user?.email}
             </p>
-            <p className="text-accent font-bold text-sm mb-3">
-              {mockStudent.major}
-            </p>
-            <div className="flex items-center gap-1 text-gray-400 text-xs">
-              <FiUser size={12} />
-              <span>عضو منذ {mockStudent.joinedAt}</span>
+            <div className="flex items-center gap-1 text-gray-400 text-sm mt-3 font-semibold">
+              <FiUser size={18} />
+              <span>عضو نشط</span>
             </div>
           </motion.div>
 
           {/* Stats */}
           <motion.div
             variants={container}
+            viewport={{ once: false, amount: 0.5 }}
+            whileInView="visible"
             initial="hidden"
-            animate="visible"
             className="lg:col-span-3 grid grid-cols-2 sm:grid-cols-4 gap-4"
           >
             <StatCard
@@ -308,7 +329,7 @@ const StudentDashboard: React.FC = () => {
                     اسم الملف
                   </th>
                   <th className="px-6 py-3 font-bold text-primary text-sm hidden md:table-cell">
-                    المساق
+                    التصنيف
                   </th>
                   <th className="px-6 py-3 font-bold text-primary text-sm hidden sm:table-cell">
                     تاريخ الرفع
@@ -325,7 +346,9 @@ const StudentDashboard: React.FC = () => {
                 {filtered.length === 0 ? (
                   <tr>
                     <td colSpan={5} className="text-center py-16 text-gray-400">
-                      <div className="text-5xl mb-3">📂</div>
+                      <div className="text-5xl mb-3 flex items-center justify-center text-primary">
+                        <FaFolderOpen />
+                      </div>
                       <p className="font-semibold">لا توجد ملفات بهذه الحالة</p>
                     </td>
                   </tr>
@@ -347,19 +370,19 @@ const StudentDashboard: React.FC = () => {
                             </div>
                             <div>
                               <p className="font-bold text-primary text-sm">
-                                {file.name}
+                                {file.title}
                               </p>
                               <p className="text-gray-400 text-xs">
-                                {file.size}
+                                {formatSize(file.sizeBytes)}
                               </p>
                             </div>
                           </div>
                         </td>
                         <td className="px-6 py-4 text-gray-500 text-sm font-semibold hidden md:table-cell">
-                          {file.course}
+                          {fileTypeLabel[file.type] || file.type}
                         </td>
                         <td className="px-6 py-4 text-gray-400 text-sm hidden sm:table-cell">
-                          {file.uploadedAt}
+                          {new Date(file.createdAt).toLocaleDateString("ar")}
                         </td>
                         <td className="px-6 py-4">
                           <span
@@ -371,10 +394,17 @@ const StudentDashboard: React.FC = () => {
                         </td>
                         <td className="px-6 py-4">
                           <div className="flex items-center gap-2">
-                            <button className="p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors">
+                            <Link
+                              to={`/majors/${file.ownerId}/summaries`}
+                              className="p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors"
+                              title="عرض صفحة الملخصات"
+                            >
                               <FiEye size={16} />
-                            </button>
-                            <button className="p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors">
+                            </Link>
+                            <button
+                              onClick={() => handleDownload(file.id)}
+                              className="p-2 rounded-xl hover:bg-primary/10 text-primary transition-colors"
+                            >
                               <FiDownload size={16} />
                             </button>
                           </div>

@@ -1,14 +1,14 @@
 import React, { useState } from "react";
 import { motion, AnimatePresence, Variants } from "framer-motion";
-import { Link, NavLink, useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate, useLocation } from "react-router-dom";
 import Button from "./Button";
 import { useAuth } from "../../store/AuthContext";
 import { FiLogOut } from "react-icons/fi";
 import { FaUserCircle } from "react-icons/fa";
 import { MdAdminPanelSettings, MdKeyboardArrowDown } from "react-icons/md";
 import { RiDashboardLine } from "react-icons/ri";
-import { useLocation } from "react-router-dom";
-
+import { FaUpload } from "react-icons/fa";
+import NotificationDropdown from "./NotificationDropdown";
 interface NavLinkConfig {
   label: string;
   path: string;
@@ -74,45 +74,65 @@ const Navbar: React.FC = () => {
     navigate("/");
   };
 
-  const getDashboardLink = () => {
-    if (!user) return "/auth";
-    if (user.role === "ADMIN" || user.role === "SUPER_ADMIN") return "/";
-    if (user.role === "MODERATOR") return "/supervisor";
-    return "/dashboard";
-  };
-
   const visibleLinks = mainLinks;
 
   const ProfileDropdownContent = ({ onClose }: { onClose: () => void }) => (
     <>
-      {user?.role !== "MEMBER" && (
-        <Link
-          to={getDashboardLink()}
-          onClick={onClose}
-          className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline"
-        >
-          {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN" ? (
-            <MdAdminPanelSettings size={20} />
-          ) : (
+      {/* ── Member: dashboard + upload ── */}
+      {user?.role === "MEMBER" && (
+        <>
+          <Link
+            to="/dashboard"
+            onClick={onClose}
+            className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline text-primary"
+          >
             <RiDashboardLine size={20} />
-          )}
-          <span className="text-md font-semibold">
-            {user?.role === "ADMIN" || user?.role === "SUPER_ADMIN"
-              ? "لوحة التحكم"
-              : "لوحة المراجعة"}
-          </span>
+            <span className="text-md font-semibold">لوحة الطالب</span>
+          </Link>
+        </>
+      )}
+
+      {/* ── Moderator ── */}
+      {user?.role === "MODERATOR" && (
+        <Link
+          to="/supervisor"
+          onClick={onClose}
+          className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline text-primary"
+        >
+          <RiDashboardLine size={20} />
+          <span className="text-md font-semibold">لوحة المراجعة</span>
         </Link>
       )}
 
+      {/* ── Admin ── */}
+      {(user?.role === "ADMIN" || user?.role === "SUPER_ADMIN") && (
+        <Link
+          to="/admin"
+          onClick={onClose}
+          className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline text-primary"
+        >
+          <MdAdminPanelSettings size={20} />
+          <span className="text-md font-semibold">لوحة التحكم</span>
+        </Link>
+      )}
+
+      {/* ── Everyone: profile + logout ── */}
+      <div className="mx-3 my-1 h-px bg-gray-200" />
       <Link
-        to={user?.role === "MEMBER" ? "/dashboard" : "/profile"}
+        to="/upload"
+        className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline text-primary"
+      >
+        <FaUpload size={18} />
+        <span className="text-md font-semibold">رفع ملف</span>
+      </Link>
+      <Link
+        to="/profile"
         onClick={onClose}
-        className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline"
+        className="flex items-center gap-3 px-4 py-2 hover:bg-primary/5 transition-colors no-underline text-primary"
       >
         <FaUserCircle size={18} />
         <span className="text-md font-semibold">حسابي</span>
       </Link>
-
       <button
         onClick={() => {
           onClose();
@@ -125,7 +145,6 @@ const Navbar: React.FC = () => {
       </button>
     </>
   );
-
   return (
     <motion.nav
       className="sticky top-0 z-50 bg-primary border-b border-white/10"
@@ -158,22 +177,14 @@ const Navbar: React.FC = () => {
                 </NavLink>
               </motion.li>
             ))}
-
-            {user?.role === "MODERATOR" && (
-              <motion.li variants={linkItem}>
-                <NavLink
-                  to="/supervisor"
-                  className="text-paragraph hover:text-accent transition-colors text-lg no-underline font-semibold"
-                >
-                  لوحة المراجعة
-                </NavLink>
-              </motion.li>
-            )}
           </motion.ul>
         </div>
 
         {/* Right Side Actions */}
         <div className="flex items-center gap-2 sm:gap-4">
+          {/* Notifications */}
+          {isAuthenticated && user && <NotificationDropdown />}
+
           {/* Desktop Profile Dropdown */}
           {isAuthenticated && user ? (
             <div className="relative hidden lg:block">

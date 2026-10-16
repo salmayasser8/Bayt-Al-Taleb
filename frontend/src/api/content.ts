@@ -16,7 +16,6 @@ export const getMajorCourses = async (majorId: string) => {
   return res.data;
 };
 
-
 export const getCourseFiles = async (courseId: string) => {
   const res = await api.get(`/files/owner/COURSE/${courseId}/approved`);
   return res.data;
@@ -27,5 +26,9 @@ export const downloadFile = async (fileId: string) => {
   const res = await api.get(`/files/${fileId}/download`, {
     responseType: "blob",
   });
+  return res.data;
+};
+export const getScholarshipSections = async (id: string) => {
+  const res = await api.get(`/content/SCHOLARSHIP/${id}/sections`);
   return res.data;
 };

@@ -26,6 +26,7 @@ export interface FileView {
   uploadedBy?: {
     id: string;
     fullName: string;
+    email: string;
   } | null;
   createdAt: Date;
   updatedAt: Date;

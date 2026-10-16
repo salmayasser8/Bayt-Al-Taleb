@@ -2,6 +2,7 @@ import type { PrismaClient, AuditEntityType } from '@prisma/client';
 import type { DeletedItemDto } from './deleted-items.dto.js';
 import type { QueueQuery } from './deleted-items.validation.js';
 import { NotFoundError, BadRequestError } from '../../shared/errors/app-error.js';
+import type { DeletedItem } from '../../shared/soft-delete/soft-delete.js'; // ADD THIS LINE
 
 export type RestoreHook = (entityId: string, restoredById: string) => Promise<void>;
 
@@ -16,41 +17,106 @@ export class DeletedItemsService {
 
   // ─── List deleted queue ───────────────────────────────────────
 
-  async list(query: QueueQuery): Promise<{ items: DeletedItemDto[]; total: number; page: number; limit: number }> {
-    const skip  = (query.page - 1) * query.limit;
+  async list(
+    query: QueueQuery,
+  ): Promise<{ items: DeletedItemDto[]; total: number; page: number; limit: number }> {
+    const skip = (query.page - 1) * query.limit;
     const items: DeletedItemDto[] = [];
     let total = 0;
 
     if (!query.entityType || query.entityType === 'MAJOR') {
       const majors = await this.db.major.findMany({
         where: { deletedAt: { not: null } },
-        skip, take: query.limit,
+        skip,
+        take: query.limit,
       });
-      majors.forEach(m => items.push({ id: m.id, entityType: 'MAJOR', name: m.name, deletedAt: m.deletedAt!, deletedById: m.deletedById, deleteReason: m.deleteReason }));
+      majors.forEach((m) =>
+        items.push({
+          id: m.id,
+          entityType: 'MAJOR',
+          name: m.name,
+          deletedAt: m.deletedAt!,
+          deletedById: m.deletedById,
+          deleteReason: m.deleteReason,
+        }),
+      );
       total += await this.db.major.count({ where: { deletedAt: { not: null } } });
     }
 
     if (!query.entityType || query.entityType === 'SCHOLARSHIP') {
       const scholarships = await this.db.scholarship.findMany({
         where: { deletedAt: { not: null } },
-        skip, take: query.limit,
+        skip,
+        take: query.limit,
       });
-      scholarships.forEach(s => items.push({ id: s.id, entityType: 'SCHOLARSHIP', name: s.name, deletedAt: s.deletedAt!, deletedById: s.deletedById, deleteReason: s.deleteReason }));
+      scholarships.forEach((s) =>
+        items.push({
+          id: s.id,
+          entityType: 'SCHOLARSHIP',
+          name: s.name,
+          deletedAt: s.deletedAt!,
+          deletedById: s.deletedById,
+          deleteReason: s.deleteReason,
+        }),
+      );
       total += await this.db.scholarship.count({ where: { deletedAt: { not: null } } });
     }
 
     return { items, total, page: query.page, limit: query.limit };
   }
+  async listQueue(): Promise<DeletedItem[]> {
+    const items: DeletedItem[] = [];
 
-  // ─── Restore ─────────────────────────────────────────────────
+    // 1. Get deleted Majors
+    const majors = await this.db.major.findMany({
+      where: { deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
+    });
+    for (const m of majors) {
+      items.push({
+        entityType: 'MAJOR' as AuditEntityType,
+        id: m.id,
+        label: m.name,
+        deletedAt: m.deletedAt!,
+        deletedById: m.deletedById,
+        deleteReason: m.deleteReason,
+      });
+    }
 
-  async restore(entityType: AuditEntityType, entityId: string, restoredById: string): Promise<void> {
+    // 2. Get deleted Scholarships
+    const scholarships = await this.db.scholarship.findMany({
+      where: { deletedAt: { not: null } },
+      orderBy: { deletedAt: 'desc' },
+    });
+    for (const s of scholarships) {
+      items.push({
+        entityType: 'SCHOLARSHIP' as AuditEntityType,
+        id: s.id,
+        label: s.name,
+        deletedAt: s.deletedAt!,
+        deletedById: s.deletedById,
+        deleteReason: s.deleteReason,
+      });
+    }
+    return items.sort((a, b) => b.deletedAt.getTime() - a.deletedAt.getTime());
+  }
+  async restore(
+    entityType: AuditEntityType,
+    entityId: string,
+    restoredById: string,
+  ): Promise<void> {
     await this.#assertExists(entityType, entityId);
 
     if (entityType === 'MAJOR') {
-      await this.db.major.update({ where: { id: entityId }, data: { deletedAt: null, deletedById: null, deleteReason: null } });
+      await this.db.major.update({
+        where: { id: entityId },
+        data: { deletedAt: null, deletedById: null, deleteReason: null },
+      });
     } else if (entityType === 'SCHOLARSHIP') {
-      await this.db.scholarship.update({ where: { id: entityId }, data: { deletedAt: null, deletedById: null, deleteReason: null } });
+      await this.db.scholarship.update({
+        where: { id: entityId },
+        data: { deletedAt: null, deletedById: null, deleteReason: null },
+      });
     } else {
       throw new BadRequestError(`Restore not supported for ${entityType}`);
     }
@@ -78,10 +144,14 @@ export class DeletedItemsService {
   async #assertExists(entityType: AuditEntityType, entityId: string): Promise<void> {
     let exists = false;
     if (entityType === 'MAJOR') {
-      const item = await this.db.major.findFirst({ where: { id: entityId, deletedAt: { not: null } } });
+      const item = await this.db.major.findFirst({
+        where: { id: entityId, deletedAt: { not: null } },
+      });
       exists = item !== null;
     } else if (entityType === 'SCHOLARSHIP') {
-      const item = await this.db.scholarship.findFirst({ where: { id: entityId, deletedAt: { not: null } } });
+      const item = await this.db.scholarship.findFirst({
+        where: { id: entityId, deletedAt: { not: null } },
+      });
       exists = item !== null;
     }
     if (!exists) throw new NotFoundError(`Deleted ${entityType} ${entityId} not found`);

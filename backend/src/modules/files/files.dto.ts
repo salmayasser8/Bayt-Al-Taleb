@@ -25,7 +25,9 @@ export function toFileDto(view: FileView, publicUrl: string | null) {
     // ⬇️ ADD THIS TO SHOW THE UPLOADER'S NAME ⬇️
     uploadedBy: view.uploadedBy
       ? {
+          id: view.uploadedBy.id,
           fullName: view.uploadedBy.fullName,
+          email: view.uploadedBy.email,
         }
       : null,
 

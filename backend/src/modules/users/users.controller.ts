@@ -37,4 +37,9 @@ export class UsersController {
     await this.service.delete(id);
     noContent(res);
   });
+  getMe = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user!.id;
+    const result = await this.service.getById(userId);
+    ok(res, result);
+  });
 }

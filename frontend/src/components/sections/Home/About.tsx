@@ -56,7 +56,7 @@ const AboutSection: React.FC = () => {
         >
           {/* Text side */}
           <motion.div variants={fadeUp}>
-            <h2 className="font-bold text-3xl md:text-4xl text-primary mb-4">
+            <h2 className="font-bold text-3xl md:text-4xl text-primary mb-10">
               من نحن
             </h2>
             <p className="text-gray-500 text-lg leading-relaxed mb-4">

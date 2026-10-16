@@ -1,46 +1,37 @@
-import type { File, Prisma } from '@prisma/client';
-import { AuditEntityType, FileOwnerType, FileStatus } from '@prisma/client';
-import type { Database } from '../../infrastructure/database/prisma.js';
-import { notDeleted } from '../../shared/soft-delete/soft-delete.js';
-import type { DeletedItem, SoftDeletableRepository } from '../../shared/soft-delete/soft-delete.js';
-import type { Paginated } from '../../shared/types/index.js';
-import type { FileView, FileListFilter, UploadFileData } from './files.types.js';
+import type { PrismaClient, FileOwnerType, FileStatus } from '@prisma/client';
+import type { FileView, UploadFileData, FileListFilter } from './files.types.js';
 
-/**
- * FilesRepository — all Prisma interaction for the File model.
- * Maps raw Prisma rows to `FileView` so no Prisma types leak beyond this class.
- * Implements `SoftDeletableRepository` for integration with DeletedItemsService.
- */
-export class FilesRepository implements SoftDeletableRepository {
-  readonly entityType = AuditEntityType.FILE;
+export class FilesRepository {
+  constructor(private readonly db: PrismaClient) {}
 
-  constructor(private readonly db: Database) {}
-
-  // ── Private helpers ────────────────────────────────────────────────────────
-
-  private toView(row: File): FileView {
+  private toView(row: any): FileView {
     return {
       id: row.id,
       title: row.title,
-      description: row.description ?? null,
+      description: row.description,
       type: row.type,
       status: row.status,
       storageKey: row.storageKey,
-      mimeType: row.mimeType ?? null,
-      sizeBytes: row.sizeBytes ?? null,
+      mimeType: row.mimeType,
+      sizeBytes: row.sizeBytes,
       tags: row.tags,
       rating: row.rating,
       downloads: row.downloads,
       ownerType: row.ownerType,
       ownerId: row.ownerId,
       uploadedById: row.uploadedById,
+      uploadedBy: row.uploadedBy ?? null,
       createdAt: row.createdAt,
       updatedAt: row.updatedAt,
-      deletedAt: row.deletedAt ?? null,
+      deletedAt: row.deletedAt,
     };
   }
 
-  // ── Write operations ───────────────────────────────────────────────────────
+  private readonly includeUploadedBy = {
+    uploadedBy: {
+      select: { id: true, fullName: true, email: true },
+    },
+  };
 
   async create(data: UploadFileData): Promise<FileView> {
     const row = await this.db.file.create({
@@ -48,43 +39,34 @@ export class FilesRepository implements SoftDeletableRepository {
         title: data.title,
         description: data.description ?? null,
         type: data.type,
+        status: data.status ?? 'PENDING',
         ownerType: data.ownerType,
         ownerId: data.ownerId,
         uploadedById: data.uploadedById ?? '',
         storageKey: data.storageKey,
         mimeType: data.mimeType ?? null,
         sizeBytes: data.sizeBytes ?? null,
-        status: data.status ?? FileStatus.PENDING,
       },
+      include: this.includeUploadedBy,
     });
     return this.toView(row);
   }
-
-  async updateStatus(id: string, status: FileStatus): Promise<FileView> {
-    const row = await this.db.file.update({
-      where: { id },
-      data: { status },
-    });
-    return this.toView(row);
-  }
-
-  // ── Read operations ────────────────────────────────────────────────────────
 
   async findById(id: string): Promise<FileView | null> {
     const row = await this.db.file.findFirst({
-      where: { id, ...notDeleted },
+      where: { id, deletedAt: null },
+      include: this.includeUploadedBy,
     });
     return row ? this.toView(row) : null;
   }
 
-  async findMany(filter: FileListFilter): Promise<Paginated<FileView>> {
-    const where: Prisma.FileWhereInput = { ...notDeleted };
-
-    if (filter.ownerType !== undefined) where.ownerType = filter.ownerType;
-    if (filter.ownerId !== undefined) where.ownerId = filter.ownerId;
-    if (filter.status !== undefined) where.status = filter.status;
-    if (filter.type !== undefined) where.type = filter.type;
-    if (filter.uploadedById !== undefined) where.uploadedById = filter.uploadedById;
+  async findAll(filter: FileListFilter): Promise<{ items: FileView[]; total: number }> {
+    const where: any = { deletedAt: null };
+    if (filter.ownerType) where.ownerType = filter.ownerType;
+    if (filter.ownerId) where.ownerId = filter.ownerId;
+    if (filter.status) where.status = filter.status;
+    if (filter.type) where.type = filter.type;
+    if (filter.uploadedById) where.uploadedById = filter.uploadedById;
 
     const skip = (filter.page - 1) * filter.pageSize;
 
@@ -94,146 +76,112 @@ export class FilesRepository implements SoftDeletableRepository {
         skip,
         take: filter.pageSize,
         orderBy: { createdAt: 'desc' },
+        include: this.includeUploadedBy,
       }),
       this.db.file.count({ where }),
     ]);
 
-    return {
-      items: rows.map((r) => this.toView(r)),
-      total,
-      page: filter.page,
-      pageSize: filter.pageSize,
-      totalPages: Math.ceil(total / filter.pageSize),
-    };
+    return { items: rows.map((r) => this.toView(r)), total };
   }
 
-  /**
-   * All non-deleted files for a specific owner (ownerType + ownerId pair).
-   */
-  async listByOwner(ownerType: FileOwnerType, ownerId: string): Promise<FileView[]> {
+  async findByOwner(
+    ownerType: FileOwnerType,
+    ownerId: string,
+    filter: Omit<FileListFilter, 'ownerType' | 'ownerId'>,
+  ): Promise<{ items: FileView[]; total: number }> {
+    const where = { ownerType, ownerId, deletedAt: null };
+    const skip = (filter.page - 1) * filter.pageSize;
+
+    const [rows, total] = await Promise.all([
+      this.db.file.findMany({
+        where,
+        skip,
+        take: filter.pageSize,
+        orderBy: { createdAt: 'desc' },
+        include: this.includeUploadedBy,
+      }),
+      this.db.file.count({ where }),
+    ]);
+
+    return { items: rows.map((r) => this.toView(r)), total };
+  }
+
+  async findApprovedByOwner(ownerType: FileOwnerType, ownerId: string): Promise<FileView[]> {
     const rows = await this.db.file.findMany({
-      where: { ownerType, ownerId, ...notDeleted },
+      where: { ownerType, ownerId, status: 'APPROVED', deletedAt: null },
       orderBy: { createdAt: 'desc' },
+      include: this.includeUploadedBy,
     });
     return rows.map((r) => this.toView(r));
   }
 
-  /**
-   * Approved non-deleted files for a specific owner (ownerType + ownerId).
-   */
-  // Inside modules/files/files.repository.ts
-
-  /**
-   * Approved non-deleted files for a specific owner (ownerType + ownerId).
-   */
-  async findApprovedByOwner(ownerType: FileOwnerType, ownerId: string): Promise<FileView[]> {
-    const rows = await this.db.file.findMany({
-      where: {
-        ownerType,
-        ownerId,
-        status: FileStatus.APPROVED,
-        deletedAt: null,
-      },
-      include: {
-        uploadedBy: {
-          select: { id: true, fullName: true },
-        },
-      },
-      orderBy: { createdAt: 'desc' },
+  async updateStatus(id: string, status: FileStatus): Promise<FileView> {
+    const row = await this.db.file.update({
+      where: { id },
+      data: { status },
+      include: this.includeUploadedBy,
     });
-
-    // Map manually because 'include' changes the Prisma type
-    return rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      description: row.description,
-      type: row.type,
-      status: row.status,
-      storageKey: row.storageKey,
-      mimeType: row.mimeType,
-      sizeBytes: row.sizeBytes,
-
-      // ⬇️ NEW FIELDS ⬇️
-      tags: row.tags,
-      rating: row.rating,
-      downloads: row.downloads,
-      // ⬆️ NEW FIELDS ⬆️
-
-      ownerType: row.ownerType,
-      ownerId: row.ownerId,
-      uploadedById: row.uploadedById,
-
-      // ⬇️ UPLOADER OBJECT ⬇️
-      uploadedBy: row.uploadedBy
-        ? {
-            id: row.uploadedBy.id,
-            fullName: row.uploadedBy.fullName,
-          }
-        : null,
-      // ⬆️ UPLOADER OBJECT ⬆️
-
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt,
-      deletedAt: row.deletedAt,
-    })) as FileView[];
+    return this.toView(row);
   }
-  // ── SoftDeletableRepository ────────────────────────────────────────────────
 
-  async softDelete(id: string, deletedById: string, reason: string | null): Promise<boolean> {
-    const existing = await this.db.file.findFirst({
-      where: { id, ...notDeleted },
-    });
-    if (!existing) return false;
-
+  async softDelete(id: string, deletedById: string, reason?: string): Promise<void> {
     await this.db.file.update({
       where: { id },
       data: {
         deletedAt: new Date(),
         deletedById,
-        deleteReason: reason,
+        deleteReason: reason ?? null,
       },
     });
-    return true;
   }
 
-  async restore(id: string): Promise<boolean> {
-    const existing = await this.db.file.findFirst({
-      where: { id, deletedAt: { not: null } },
-    });
-    if (!existing) return false;
-
+  async incrementDownloads(id: string): Promise<void> {
     await this.db.file.update({
       where: { id },
-      data: {
-        deletedAt: null,
-        deletedById: null,
-        deleteReason: null,
-      },
+      data: { downloads: { increment: 1 } },
     });
-    return true;
   }
 
-  async hardDelete(id: string): Promise<boolean> {
-    const existing = await this.db.file.findFirst({ where: { id } });
-    if (!existing) return false;
+  /**
+   * Find all moderator IDs assigned to an owner entity (Course, Major, or Scholarship).
+   * For Courses, also includes moderators assigned to the parent Major.
+   */
+  async findModeratorIdsForOwner(ownerType: FileOwnerType, ownerId: string): Promise<string[]> {
+    if (ownerType === 'COURSE') {
+      const course = await this.db.course.findUnique({
+        where: { id: ownerId },
+        select: {
+          moderators: { select: { id: true } },
+          major: {
+            select: {
+              moderators: { select: { id: true } },
+            },
+          },
+        },
+      });
+      if (!course) return [];
+      const ids = new Set<string>();
+      course.moderators.forEach((m) => ids.add(m.id));
+      course.major?.moderators.forEach((m) => ids.add(m.id));
+      return Array.from(ids);
+    }
 
-    await this.db.file.delete({ where: { id } });
-    return true;
-  }
+    if (ownerType === 'MAJOR') {
+      const major = await this.db.major.findUnique({
+        where: { id: ownerId },
+        select: { moderators: { select: { id: true } } },
+      });
+      return major?.moderators.map((m) => m.id) ?? [];
+    }
 
-  async listDeleted(): Promise<DeletedItem[]> {
-    const rows = await this.db.file.findMany({
-      where: { deletedAt: { not: null } },
-      orderBy: { deletedAt: 'desc' },
-    });
+    if (ownerType === 'SCHOLARSHIP') {
+      const scholarship = await this.db.scholarship.findUnique({
+        where: { id: ownerId },
+        select: { moderators: { select: { id: true } } },
+      });
+      return scholarship?.moderators.map((m) => m.id) ?? [];
+    }
 
-    return rows.map((row) => ({
-      entityType: AuditEntityType.FILE,
-      id: row.id,
-      label: row.title,
-      deletedAt: row.deletedAt as Date,
-      deletedById: row.deletedById ?? null,
-      deleteReason: row.deleteReason ?? null,
-    }));
+    return [];
   }
 }

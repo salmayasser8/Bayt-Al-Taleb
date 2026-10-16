@@ -17,7 +17,6 @@ const SideBar: React.FC<AnchorSidebarProps> = ({
   items,
   activeSection,
   onItemClick,
-  icon,
 }) => {
   return (
     <div className="hidden lg:block sticky top-24 self-start">

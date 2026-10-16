@@ -18,4 +18,7 @@ export interface Actor {
 export interface AssignmentReader {
   isMajorAssigned(userId: string, majorId: string): Promise<boolean>;
   isScholarshipAssigned(userId: string, scholarshipId: string): Promise<boolean>;
+  isCourseAssigned(userId: string, courseId: string): Promise<boolean>;
+  /** True if the moderator is assigned to any course belonging to the given major. */
+  isAssignedToAnyCourseInMajor(userId: string, majorId: string): Promise<boolean>;
 }

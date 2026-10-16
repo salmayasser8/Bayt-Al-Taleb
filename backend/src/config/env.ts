@@ -7,6 +7,7 @@ import { z } from 'zod';
  * Importing `env` anywhere gives a fully-typed, validated config object.
  * If validation fails the process exits immediately (fail-fast).
  */
+
 const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(4000),
@@ -23,10 +24,15 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('*'),
 
   LOG_LEVEL: z.enum(['fatal', 'error', 'warn', 'info', 'debug', 'trace', 'silent']).default('info'),
-
+ 
   // File uploads (local storage by default).
   UPLOAD_DIR: z.string().default('uploads'),
   MAX_FILE_SIZE_MB: z.coerce.number().positive().max(512).default(25),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().min(1),
+  GOOGLE_CLIENT_SECRET: z.string().min(1),
+  GOOGLE_CALLBACK_URL: z.string().url(),
 });
 
 export type Env = z.infer<typeof envSchema>;

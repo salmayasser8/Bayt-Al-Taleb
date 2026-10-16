@@ -1,4 +1,3 @@
-import type { College } from '@prisma/client';
 import type { Database } from '../../infrastructure/database/prisma.js';
 import type { CollegeView, CreateCollegeData, UpdateCollegeData } from './colleges.types.js';
 

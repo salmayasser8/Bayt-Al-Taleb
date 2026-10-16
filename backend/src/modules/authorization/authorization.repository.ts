@@ -29,4 +29,29 @@ export class AuthorizationRepository implements AssignmentReader {
     });
     return count > 0;
   }
+
+  /** Returns true if the user is assigned as a moderator of the given course (or the course's major). */
+  async isCourseAssigned(userId: string, courseId: string): Promise<boolean> {
+    const count = await this.db.course.count({
+      where: {
+        id: courseId,
+        OR: [
+          { moderators: { some: { id: userId } } },
+          { major: { moderators: { some: { id: userId } } } },
+        ],
+      },
+    });
+    return count > 0;
+  }
+
+  /** Returns true if the user is assigned to ANY course within the given major. */
+  async isAssignedToAnyCourseInMajor(userId: string, majorId: string): Promise<boolean> {
+    const count = await this.db.course.count({
+      where: {
+        majorId,
+        moderators: { some: { id: userId } },
+      },
+    });
+    return count > 0;
+  }
 }

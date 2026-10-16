@@ -74,7 +74,15 @@ async findBySlug(slug: string): Promise<MajorView | null> {
   }
 
   async create(data: CreateMajorData): Promise<MajorView> {
-    const row = await this.db.major.create({ data });
+    const row = await this.db.major.create({
+      data: {
+        slug: data.slug,
+        name: data.name,
+        degree: data.degree ?? '',
+        isActive: data.isActive ?? true,
+        collegeId: data.collegeId ?? null,
+      },
+    });
     return this.toView(row);
   }
 

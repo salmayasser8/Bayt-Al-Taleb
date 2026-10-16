@@ -13,8 +13,8 @@ import Button from "../components/common/Button";
 import { MdError } from "react-icons/md";
 import LoadingSpinner from "../components/common/LoadingSpinner";
 import { getMajorById } from "../api/majors.js";
-import { getMajorSections } from "../api/majors.js";
-import { getMajorFaqs } from "../api/majors.js";
+import { getMajorSections } from "../api/content.js";
+import { getMajorFaqs } from "../api/content.js";
 import OverviewSection from "../components/sections/MajorDetailPage/OverviewSection";
 import DegreesSection from "../components/sections/MajorDetailPage/DegreesSection";
 import UniversitiesSection from "../components/sections/MajorDetailPage/UniversitiesSection";
@@ -156,14 +156,6 @@ const MajorDetailPage: React.FC = () => {
 
   // ── Dynamic Section Renderer ─────────────────────────────────
   const renderSection = (section: SectionView) => {
-    // Safe JSON parser
-    let parsedData: any;
-    try {
-      parsedData = JSON.parse(section.content);
-    } catch {
-      parsedData = null;
-    }
-
     switch (section.title) {
       case "شرح عام":
         return (

@@ -6,11 +6,7 @@
  * AuditService, and StorageProvider so this class is mockable in unit tests.
  */
 import { AuditAction, AuditEntityType, FileOwnerType, FileStatus, RoleName } from '@prisma/client';
-import {
-  BadRequestError,
-  ForbiddenError,
-  NotFoundError,
-} from '../../shared/errors/app-error.js';
+import { BadRequestError, ForbiddenError, NotFoundError } from '../../shared/errors/app-error.js';
 import type { Paginated } from '../../shared/types/index.js';
 import type { Actor } from '../authorization/authorization.types.js';
 import type { AuthorizationService } from '../authorization/authorization.service.js';
@@ -28,6 +24,11 @@ import type {
   FileOwnerExistenceChecker,
 } from './files.types.js';
 
+export interface FileUploadNotifier {
+  notifyUser(data: { userId: string; title: string; message: string; metadata?: unknown }): Promise<void>;
+  notifyRole?(role: RoleName, data: { title: string; message: string; metadata?: unknown }): Promise<number>;
+}
+
 export class FilesService {
   /** Registry of per-ownerType existence checkers. */
   private readonly ownerCheckers = new Map<FileOwnerType, FileOwnerExistenceChecker>();
@@ -37,7 +38,53 @@ export class FilesService {
     private readonly authz: AuthorizationService,
     private readonly audit: AuditService,
     private readonly storage: StorageProvider,
+    private readonly notifier?: FileUploadNotifier,
   ) {}
+
+  /** Notify all moderators assigned to the file's owner (major/course/scholarship). Fire-and-forget. */
+  private async notifyModeratorsOfNewFile(file: FileView): Promise<void> {
+    if (!this.notifier) return;
+    try {
+      const moderatorIds = this.repo.findModeratorIdsForOwner
+        ? await this.repo.findModeratorIdsForOwner(file.ownerType, file.ownerId)
+        : [];
+      const targetIds = moderatorIds.filter((id) => id !== file.uploadedById);
+
+      if (targetIds.length > 0) {
+        for (const modId of targetIds) {
+          await this.notifier
+            .notifyUser({
+              userId: modId,
+              title: 'ملف جديد بانتظار المراجعة ',
+              message: `قام أحد الطلاب برفع ملف جديد "${file.title}" بانتظار مراجعتك واعتماده.`,
+              metadata: {
+                fileId: file.id,
+                ownerType: file.ownerType,
+                ownerId: file.ownerId,
+                type: 'FILE_UPLOAD',
+              },
+            })
+            .catch(() => undefined);
+        }
+      } else if (this.notifier.notifyRole) {
+        // Fallback: إذا لم يكن هناك مشرف مخصص لهذه المادة، يتم إشعار كل المشرفين في النظام
+        await this.notifier
+          .notifyRole(RoleName.MODERATOR, {
+            title: 'ملف جديد بانتظار المراجعة ',
+            message: `قام أحد الطلاب برفع ملف جديد "${file.title}" بانتظار مراجعتك واعتماده.`,
+            metadata: {
+              fileId: file.id,
+              ownerType: file.ownerType,
+              ownerId: file.ownerId,
+              type: 'FILE_UPLOAD',
+            },
+          })
+          .catch(() => undefined);
+      }
+    } catch {
+      // Fire-and-forget: notification errors never fail the upload
+    }
+  }
 
   // ── Owner checker registration ─────────────────────────────────────────────
 
@@ -122,6 +169,8 @@ export class FilesService {
       entityId: file.id,
     });
 
+    void this.notifyModeratorsOfNewFile(file);
+
     return file;
   }
 
@@ -203,6 +252,8 @@ export class FilesService {
       entityId: file.id,
     });
 
+    void this.notifyModeratorsOfNewFile(file);
+
     return file;
   }
 
@@ -219,32 +270,38 @@ export class FilesService {
     }
     return file;
   }
- async getApprovedByOwner(
-  ownerType: FileOwnerType,
-  ownerId: string,
-): Promise<FileView[]> {
-  const result = await this.list({
-    ownerType,
-    ownerId,
-    status: FileStatus.APPROVED,
-    page: 1,
-    pageSize: 100,
-  });
+  async getApprovedByOwner(ownerType: FileOwnerType, ownerId: string): Promise<FileView[]> {
+    const result = await this.list({
+      ownerType,
+      ownerId,
+      status: FileStatus.APPROVED,
+      page: 1,
+      pageSize: 100,
+    });
 
-  return result.items;
-}
+    return result.items;
+  }
   /**
    * Paginated list of non-deleted files with optional filters.
    */
   async list(filter: FileListFilter): Promise<Paginated<FileView>> {
-    return this.repo.findMany(filter);
+    const { items, total } = await this.repo.findAll(filter);
+    const totalPages = Math.ceil(total / filter.pageSize) || 1;
+    return {
+      items,
+      total,
+      page: filter.page,
+      pageSize: filter.pageSize,
+      totalPages,
+    };
   }
 
   /**
    * All non-deleted files for a specific owner.
    */
   async listByOwner(ownerType: FileOwnerType, ownerId: string): Promise<FileView[]> {
-    return this.repo.listByOwner(ownerType, ownerId);
+    const res = await this.list({ ownerType, ownerId, page: 1, pageSize: 1000 });
+    return res.items;
   }
 
   /**
@@ -276,8 +333,7 @@ export class FilesService {
       const isUploader = actor && actor.id === file.uploadedById;
       // Admin / super-admin bypass.
       const isAdmin =
-        actor &&
-        (actor.role === RoleName.ADMIN || actor.role === RoleName.SUPER_ADMIN);
+        actor && (actor.role === RoleName.ADMIN || actor.role === RoleName.SUPER_ADMIN);
 
       if (!isUploader && !isAdmin) {
         // Check if MODERATOR is assigned to this file's owner.
@@ -330,7 +386,7 @@ export class FilesService {
     // assertCanManageFile also verifies the file exists.
     const file = await this.assertCanManageFile(actor, id);
 
-    await this.repo.softDelete(id, actor.id, reason ?? null);
+    await this.repo.softDelete(id, actor.id, reason ?? undefined);
 
     // Purge binary from storage.
     await this.storage.delete(file.storageKey).catch(() => undefined);

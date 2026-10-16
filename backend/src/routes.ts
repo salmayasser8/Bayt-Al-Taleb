@@ -20,6 +20,7 @@ import { createContactRouter } from './modules/contact/contact.routes.js';
 import { createNotificationsRouter } from './modules/notifications/notifications.routes.js';
 import { createAuditRouter } from './modules/audit/audit.routes.js';
 import { createCoursesRouter } from './modules/courses/courses.routes.js';
+import { createModeratorsRouter } from './modules/moderators/moderators.routes.js';
 /**
  * Builds the versioned API router (/api/v1).
  * Mount a new module by adding one line here.
@@ -29,7 +30,7 @@ export function createApiRouter(container: Container): Router {
 
   const authMiddleware = authenticate(container.tokenService);
   const uploadMiddleware = createUploadMiddleware(Number(env.MAX_FILE_SIZE_MB));
-  router.use('/auth', createAuthRouter(container.authController));
+  router.use('/auth', createAuthRouter(container.authController, authMiddleware));
   router.use('/search', createSearchRouter(container.searchController));
 
   router.use('/users', createUsersRouter(container.usersController, container.tokenService));
@@ -71,6 +72,12 @@ export function createApiRouter(container: Container): Router {
 
   router.use('/audit-logs', createAuditRouter(container.auditController, authMiddleware));
 
-  router.use(createCoursesRouter(container.coursesController));
+  router.use(createCoursesRouter(container.coursesController, authMiddleware));
+
+  router.use(
+    '/moderators',
+    createModeratorsRouter(container.moderatorsController, container.authenticate),
+  );
+
   return router;
 }

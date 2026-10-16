@@ -23,7 +23,7 @@ import type { CreateReviewInput } from './reviews.validation.js';
  * `applyReviewStatus` transitions the file's status after a decision.
  */
 interface FileStatusUpdater {
-  assertCanManageFile(actor: Actor, fileId: string): Promise<{ status: FileStatus; uploadedById: string }>;
+  assertCanManageFile(actor: Actor, fileId: string): Promise<{ status: FileStatus; uploadedById: string; title: string }>;
   applyReviewStatus(fileId: string, status: FileStatus): Promise<void>;
 }
 
@@ -80,17 +80,21 @@ export class ReviewsService {
 
     // 6. Notify the file owner. Errors are swallowed — a notification failure
     //    must never surface as an HTTP error on the review request.
-    const title =
-      input.action === ReviewAction.APPROVE ? 'File approved' : 'File rejected';
-    const message =
-      input.action === ReviewAction.APPROVE
-        ? 'Your file has been approved'
-        : input.comment
-          ? `Your file has been rejected: ${input.comment}`
-          : 'Your file has been rejected';
+    const isApproved = input.action === ReviewAction.APPROVE;
+    const title = isApproved ? 'تمت الموافقة على الملف ✅' : 'تم رفض الملف ❌';
+    const message = isApproved
+      ? `تمت الموافقة على ملفك "${file.title}" بنجاح.`
+      : input.comment
+        ? `تم رفض ملفك "${file.title}". سبب الرفض: ${input.comment}`
+        : `تم رفض ملفك "${file.title}".`;
 
     try {
-      await this.notifications.notifyUser({ userId: file.uploadedById, title, message });
+      await this.notifications.notifyUser({
+        userId: file.uploadedById,
+        title,
+        message,
+        metadata: { fileId, action: input.action, reason: input.comment },
+      });
     } catch {
       /* non-critical — notification failure must not fail the review */
     }

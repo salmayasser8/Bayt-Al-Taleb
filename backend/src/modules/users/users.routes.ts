@@ -21,10 +21,7 @@ import {
  *   PATCH  /:id      update user        (users:manage)
  *   DELETE /:id      delete user        (users:manage)
  */
-export function createUsersRouter(
-  controller: UsersController,
-  tokenService: TokenService,
-): Router {
+export function createUsersRouter(controller: UsersController, tokenService: TokenService): Router {
   const router = Router();
   const auth = authenticate(tokenService);
 
@@ -44,8 +41,9 @@ export function createUsersRouter(
     controller.create,
   );
 
+  router.get('/me', auth, controller.getMe);
   router.get(
-    '/:id',
+    '/:id', 
     auth,
     requirePermission(PERMISSIONS.USERS_READ),
     validate({ params: userIdParamsSchema }),
@@ -67,6 +65,5 @@ export function createUsersRouter(
     validate({ params: userIdParamsSchema }),
     controller.delete,
   );
-
   return router;
 }

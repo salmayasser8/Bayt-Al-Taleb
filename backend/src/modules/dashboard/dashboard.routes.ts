@@ -1,17 +1,36 @@
+import { Router } from 'express';
+import type { DashboardController } from './dashboard.controller.js';
+import type { TokenService } from '../auth/auth.types.js';
+import { authenticate } from '../../infrastructure/http/middlewares/auth.middleware.js';
+import { requirePermission } from '../../infrastructure/http/middlewares/role.guard.js';
+import { PERMISSIONS } from '../../shared/rbac/permissions.js';
+
 /**
- * Dashboard routes. Mounted at `/api/v1/dashboard`.
- * Read-only aggregates; restricted to ADMIN and SUPER_ADMIN.
+ * Dashboard routes — mounted at /api/v1/dashboard
  *
- *   GET /stats             platform-wide counts (+ deleted-items count)
- *   GET /recent-activity   latest 10 per category (uploads, audit, deleted, contact)
+ *   GET /stats            platform-wide counts   (users:read)
+ *   GET /recent-activity  latest 10 per category (users:read)
  */
+export function createDashboardRouter(
+  controller: DashboardController,
+  tokenService: TokenService,
+): Router {
+  const router = Router();
+  const auth   = authenticate(tokenService);
 
-// ┌─────────────────────────────────────────────────────────────┐
-// │ STUB — implement this file. (Reference impl in CodeDev.)     │
-// └─────────────────────────────────────────────────────────────┘
-// File: backend/src/modules/dashboard/dashboard.routes.ts
-// Expected exports: createDashboardRouter
-//
-// TODO: implement.
+  router.get(
+    '/stats',
+    auth,
+    requirePermission(PERMISSIONS.USERS_READ),
+    controller.getStats,
+  );
 
-export {};
+  router.get(
+    '/recent-activity',
+    auth,
+    requirePermission(PERMISSIONS.USERS_READ),
+    controller.getRecentActivity,
+  );
+
+  return router;
+}

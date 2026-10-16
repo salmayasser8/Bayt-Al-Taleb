@@ -8,6 +8,7 @@
 
 import { prisma } from './infrastructure/database/prisma.js';
 import type { Database } from './infrastructure/database/prisma.js';
+import { FileOwnerType } from '@prisma/client';
 import { env } from './config/env.js';
 import { authenticate } from './infrastructure/http/middlewares/auth.middleware.js';
 import type { RequestHandler } from 'express';
@@ -17,6 +18,8 @@ import { AuthService } from './modules/auth/auth.service.js';
 import { AuthController } from './modules/auth/auth.controller.js';
 import { BcryptPasswordHasher } from './modules/auth/bcrypt-password.hasher.js';
 import { JwtTokenService } from './modules/auth/jwt-token.service.js';
+import { GoogleAuthService } from './modules/auth/google-auth.service.js';
+import { EmailService } from './modules/auth/email.service.js';
 
 import { AuthorizationRepository } from './modules/authorization/authorization.repository.js';
 import { AuthorizationService } from './modules/authorization/authorization.service.js';
@@ -57,7 +60,6 @@ import { FilesRepository } from './modules/files/files.repository.js';
 import { FilesService } from './modules/files/files.service.js';
 import { FilesController } from './modules/files/files.controller.js';
 
-import { PostgresSearchProvider } from './modules/search/postgres-search.provider.js';
 import { SearchService } from './modules/search/search.service.js';
 import { SearchController } from './modules/search/search.controller.js';
 
@@ -77,6 +79,9 @@ import { CoursesRepository } from './modules/courses/courses.repository.js';
 import { CoursesService } from './modules/courses/courses.service.js';
 import { CoursesController } from './modules/courses/courses.controller.js';
 
+import { ModeratorsService } from './modules/moderators/moderators.service.js';
+import { ModeratorsController } from './modules/moderators/moderators.controller.js';
+
 export interface Container {
   authenticate: RequestHandler;
   authController: AuthController;
@@ -95,6 +100,7 @@ export interface Container {
   auditController: AuditController;
   tokenService: JwtTokenService;
   coursesController: CoursesController;
+  moderatorsController: ModeratorsController;
 }
 
 export function buildContainer(db: Database = prisma): Container {
@@ -113,7 +119,20 @@ export function buildContainer(db: Database = prisma): Container {
   // ── Auth ──────────────────────────────────────────────────
   const authRepo = new AuthRepository(db);
   const refreshTtlMs = 7 * 24 * 60 * 60 * 1000;
-  const authService = new AuthService(authRepo, hasher, tokenService, refreshTtlMs);
+  const googleAuthService = new GoogleAuthService(
+    env.GOOGLE_CLIENT_ID,
+    env.GOOGLE_CLIENT_SECRET,
+    env.GOOGLE_CALLBACK_URL,
+    authRepo,
+  );
+  const emailService = new EmailService(
+    env.SMTP_HOST,
+    env.SMTP_PORT,
+    env.SMTP_USER,
+    env.SMTP_PASS,
+    env.MAIL_FROM,
+  );
+  const authService = new AuthService(authRepo, hasher, tokenService, refreshTtlMs, googleAuthService, emailService);
   const authController = new AuthController(authService);
 
   // ── Authorization ─────────────────────────────────────────
@@ -125,9 +144,14 @@ export function buildContainer(db: Database = prisma): Container {
   const auditService = new AuditService(auditRepo);
   const auditController = new AuditController(auditService);
 
+  // ── Notifications ─────────────────────────────────────────────
+  const notificationsRepo = new NotificationsRepository(db);
+  const notificationService = new NotificationService(notificationsRepo);
+  const notificationsController = new NotificationsController(notificationService);
+
   // ── Users ─────────────────────────────────────────────────
   const usersRepo = new UsersRepository(db);
-  const usersService = new UsersService(usersRepo, hasher);
+  const usersService = new UsersService(usersRepo, hasher, notificationService);
   const usersController = new UsersController(usersService);
 
   // ── Roles ─────────────────────────────────────────────────
@@ -165,21 +189,10 @@ export function buildContainer(db: Database = prisma): Container {
   const deletedItemsController = new DeletedItemsController(deletedItemsService);
 
   // ── Files ─────────────────────────────────────────────────────
-  const storageProvider = new LocalStorageProvider(env.UPLOAD_DIR);
-  const filesRepo = new FilesRepository(db);
-  const filesService = new FilesService(filesRepo, authzService, auditService, storageProvider);
-  filesService.registerOwnerChecker('MAJOR', majorsService);
-  filesService.registerOwnerChecker('SCHOLARSHIP', scholarshipsService);
-  const filesController = new FilesController(filesService, storageProvider);
 
   // ── Search ────────────────────────────────────────────────
   const searchService = new SearchService(db);
   const searchController = new SearchController(searchService);
-
-  // ── Notifications ─────────────────────────────────────────────
-  const notificationsRepo = new NotificationsRepository(db);
-  const notificationService = new NotificationService(notificationsRepo);
-  const notificationsController = new NotificationsController(notificationService);
 
   // ── Reviews ───────────────────────────────────────────────────
   const reviewsRepo = new ReviewsRepository(db);
@@ -199,6 +212,30 @@ export function buildContainer(db: Database = prisma): Container {
   const coursesRepo = new CoursesRepository(db);
   const coursesService = new CoursesService(coursesRepo);
   const coursesController = new CoursesController(coursesService);
+
+  const storageProvider = new LocalStorageProvider(env.UPLOAD_DIR);
+  const filesRepo = new FilesRepository(db);
+  const filesService = new FilesService(
+    filesRepo,
+    authzService,
+    auditService,
+    storageProvider,
+    notificationService,
+  );
+  filesService.registerOwnerChecker('MAJOR', majorsService);
+  filesService.registerOwnerChecker('SCHOLARSHIP', scholarshipsService);
+  filesService.registerOwnerChecker('COURSE', coursesService);
+  const filesController = new FilesController(filesService, storageProvider);
+
+  // Register COURSE owner checker (must be after coursesService is created)
+  filesService.registerOwnerChecker('COURSE', {
+    exists: (_ownerType: FileOwnerType, id: string) =>
+      coursesService.findById(id).then((c) => c !== null),
+  });
+
+  // ── Moderators (assignment management) ────────────────────────
+  const moderatorsService = new ModeratorsService(db, notificationService);
+  const moderatorsController = new ModeratorsController(moderatorsService);
 
   // ── Contact ────────────────────────────────────────────────
   const contactRepo = new ContactRepository(db);
@@ -233,5 +270,6 @@ export function buildContainer(db: Database = prisma): Container {
     auditController,
     tokenService,
     coursesController,
+    moderatorsController,
   };
 }

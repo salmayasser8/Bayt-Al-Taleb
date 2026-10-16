@@ -36,8 +36,43 @@ export class AuthController {
   login = asyncHandler(async (req: Request, res: Response) => {
     const input = req.body as LoginInput;
     const result = await this.service.login(input);
+
+    // 2FA required → do not return tokens yet.
+    if (result.requiresTwoFactor) {
+      ok(res, { requiresTwoFactor: true, tempToken: result.tempToken });
+      return;
+    }
+
     const dto: AuthResponseDto = { user: result.user, tokens: result.tokens };
     ok(res, dto);
+  });
+
+  verifyOtp = asyncHandler(async (req: Request, res: Response) => {
+    const { tempToken, code } = req.body as { tempToken: string; code: string };
+    const result = await this.service.verifyOtp({ tempToken, code });
+    const dto: AuthResponseDto = { user: result.user, tokens: result.tokens };
+    ok(res, dto);
+  });
+
+  setupTwoFactor = asyncHandler(async (req: Request, res: Response) => {
+    await this.service.setupTwoFactor(req.user!.id);
+    ok(res, { message: 'Verification code sent to your email' });
+  });
+
+  confirmTwoFactor = asyncHandler(async (req: Request, res: Response) => {
+    const { code } = req.body as { code: string };
+    await this.service.confirmTwoFactor(req.user!.id, code);
+    ok(res, { message: 'Two-factor authentication enabled' });
+  });
+
+  disableTwoFactor = asyncHandler(async (req: Request, res: Response) => {
+    await this.service.disableTwoFactor(req.user!.id);
+    ok(res, { message: 'Two-factor authentication disabled' });
+  });
+
+  getTwoFactorStatus = asyncHandler(async (req: Request, res: Response) => {
+    const status = await this.service.getTwoFactorStatus(req.user!.id);
+    ok(res, status);
   });
 
   refresh = asyncHandler(async (req: Request, res: Response) => {
@@ -51,5 +86,24 @@ export class AuthController {
     const input = req.body as LogoutInput;
     await this.service.logout(input);
     noContent(res);
+  });
+
+  getGoogleAuthUrl = asyncHandler(async (_req: Request, res: Response) => {
+    const url = this.service.getGoogleAuthUrl();
+    res.redirect(url);
+  });
+
+  loginWithGoogle = asyncHandler(async (req: Request, res: Response) => {
+    const code = req.query.code as string;
+    if (!code) throw new Error('Missing code from Google');
+
+    const result = await this.service.loginWithGoogle(code);
+
+    const params = new URLSearchParams({
+      accessToken: result.tokens.accessToken,
+      refreshToken: result.tokens.refreshToken,
+    });
+
+    res.redirect(`http://localhost:5173/auth/callback?${params.toString()}`);
   });
 }

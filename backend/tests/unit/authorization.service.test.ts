@@ -29,6 +29,8 @@ describe('AuthorizationService', () => {
     reader = {
       isMajorAssigned: vi.fn(async (_u, id) => assignedMajors.has(id)),
       isScholarshipAssigned: vi.fn(async (_u, id) => assignedScholarships.has(id)),
+      isCourseAssigned: vi.fn(async () => false),
+      isAssignedToAnyCourseInMajor: vi.fn(async () => false),
     };
     authz = new AuthorizationService(reader);
   });

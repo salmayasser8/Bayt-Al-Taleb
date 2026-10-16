@@ -5,10 +5,9 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { FcGoogle } from "react-icons/fc";
-import { TfiMicrosoftAlt } from "react-icons/tfi";
 import { GiGraduateCap } from "react-icons/gi";
 import { useToast } from "@/hooks/use-toast";
-import { loginApi, registerApi } from "@/api/auth";
+import { loginApi, registerApi, verifyOtpApi } from "@/api/auth";
 import { useAuth } from "@/store/AuthContext";
 const loginSchema = z.object({
   email: z
@@ -78,6 +77,9 @@ const InputField: React.FC<InputFieldProps> = ({
 
 const AuthPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true);
+  const [otpTempToken, setOtpTempToken] = useState<string | null>(null);
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSubmitting, setOtpSubmitting] = useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -104,7 +106,21 @@ const AuthPage: React.FC = () => {
     try {
       const json = await loginApi(data.email, data.password);
 
-      login(json.data.user, json.data.tokens.accessToken);
+      // 2FA is enabled for this account → show the OTP screen.
+      if (json.data?.requiresTwoFactor) {
+        setOtpTempToken(json.data.tempToken);
+        toast({
+          title: "تم إرسال الكود",
+          description: "تم إرسال كود التحقق إلى بريدك الإلكتروني",
+        });
+        return;
+      }
+
+      login(
+        json.data.user,
+        json.data.tokens.accessToken,
+        json.data.tokens.refreshToken,
+      );
 
       if (
         json.data.user.role === "ADMIN" ||
@@ -112,9 +128,9 @@ const AuthPage: React.FC = () => {
       ) {
         navigate("/");
       } else if (json.data.user.role === "MODERATOR") {
-        navigate("/supervisor");
+        navigate("/");
       } else {
-        navigate("/dashboard");
+        navigate("/");
       }
 
       toast({
@@ -129,9 +145,37 @@ const AuthPage: React.FC = () => {
       });
     }
   };
+  const onVerifyOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!otpTempToken) return;
+    setOtpSubmitting(true);
+    try {
+      const json = await verifyOtpApi(otpTempToken, otpCode);
+      login(
+        json.data.user,
+        json.data.tokens.accessToken,
+        json.data.tokens.refreshToken,
+      );
+      toast({
+        title: "تم تسجيل الدخول",
+        description: `مرحباً ${json.data.user.fullName}`,
+      });
+      navigate("/");
+    } catch (err: any) {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: err.response?.data?.error?.message || "كود التحقق غير صحيح",
+      });
+    } finally {
+      setOtpSubmitting(false);
+    }
+  };
+
   const onRegister = async (data: RegisterFormData) => {
     try {
       const json = await registerApi(data.email, data.password, data.name);
+      void json;
       // login(json.data.user, json.data.tokens.accessToken);
       // navigate("/");
       // toast({
@@ -195,7 +239,60 @@ const AuthPage: React.FC = () => {
           {/* Forms */}
           <div className="relative overflow-hidden">
             <AnimatePresence mode="wait" initial={false}>
-              {isLogin ? (
+              {otpTempToken ? (
+                <motion.div
+                  key="otp"
+                  initial={{ opacity: 0, x: "100%" }}
+                  animate={{ opacity: 1, x: 0 }}
+                  exit={{ opacity: 0, x: "-100%" }}
+                  transition={{ duration: 0.4, ease: "easeOut" }}
+                  className="p-8"
+                >
+                  <form onSubmit={onVerifyOtp} className="flex flex-col gap-4">
+                    <div className="text-center mb-2">
+                      <p className="font-bold text-primary text-lg">
+                        التحقق بخطوتين
+                      </p>
+                      <p className="text-gray-500 text-sm mt-2">
+                        تم إرسال كود مكوّن من 6 أرقام إلى بريدك الإلكتروني
+                      </p>
+                    </div>
+
+                    <input
+                      type="text"
+                      inputMode="numeric"
+                      maxLength={6}
+                      placeholder="000000"
+                      value={otpCode}
+                      onChange={(e) =>
+                        setOtpCode(e.target.value.replace(/\D/g, ""))
+                      }
+                      className="border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors bg-bgSection text-primary text-center text-2xl tracking-[0.5em] font-bold"
+                    />
+
+                    <motion.button
+                      type="submit"
+                      disabled={otpSubmitting || otpCode.length !== 6}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
+                      className="w-full bg-primary text-paragraph font-bold py-3 rounded-xl hover:bg-primaryLight transition-colors duration-300 text-lg disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      {otpSubmitting ? "جارٍ التحقق..." : "تأكيد"}
+                    </motion.button>
+
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setOtpTempToken(null);
+                        setOtpCode("");
+                      }}
+                      className="w-fit mx-auto text-primary text-sm font-semibold hover:text-accent transition-colors"
+                    >
+                      العودة لتسجيل الدخول
+                    </button>
+                  </form>
+                </motion.div>
+              ) : isLogin ? (
                 <motion.div
                   key="login"
                   initial="enterLogin"
@@ -300,6 +397,28 @@ const AuthPage: React.FC = () => {
                         ? "جارٍ إنشاء الحساب..."
                         : "إنشاء حساب"}
                     </motion.button>
+
+                    {/* Divider */}
+                    <div className="flex items-center my-2">
+                      <div className="flex-1 border-t border-gray-300"></div>
+                      <span className="px-4 text-gray-500 text-sm">أو تابع عبر</span>
+                      <div className="flex-1 border-t border-gray-300"></div>
+                    </div>
+
+                    {/* Google Login Button */}
+                    <motion.button
+                      type="button"
+                      onClick={() => {
+                        window.location.href = "http://localhost:4001/api/v1/auth/google";
+                      }}
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}
+                      className="w-full bg-white text-primary border border-gray-300 font-bold py-3 rounded-xl hover:bg-gray-50 transition-colors duration-300 text-lg flex items-center justify-center gap-2"
+                    >
+                      <FcGoogle className="text-xl" />
+                      تسجيل الدخول باستخدام جوجل
+                    </motion.button>
+
                   </form>
                 </motion.div>
               )}

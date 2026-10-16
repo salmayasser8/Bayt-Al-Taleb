@@ -18,7 +18,6 @@ interface Course {
   code: string;
   year: number;
   semester: string;
-  icon: string;
 }
 
 interface FileView {
@@ -47,34 +46,6 @@ interface MajorView {
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
-};
-
-// ── File type label ───────────────────────────────────────────────────
-
-const fileTypeLabel = (type: string) => {
-  switch (type) {
-    case "SUMMARY":
-      return "ملخص";
-    case "PREVIOUS_EXAM":
-      return "امتحان سابق";
-    case "SYLLABUS":
-      return "خطة مساق";
-    default:
-      return "ملف";
-  }
-};
-
-const fileTypeBadgeColor = (type: string) => {
-  switch (type) {
-    case "SUMMARY":
-      return "bg-blue-100 text-blue-600";
-    case "PREVIOUS_EXAM":
-      return "bg-orange-100 text-orange-600";
-    case "SYLLABUS":
-      return "bg-green-100 text-green-600";
-    default:
-      return "bg-gray-100 text-gray-600";
-  }
 };
 
 // ── Main Page ─────────────────────────────────────────────────────────
@@ -121,11 +92,10 @@ const CourseSummariesPage: React.FC = () => {
   // Split files by type
   const summaries = files.filter((f) => f.type === "SUMMARY");
   const exams = files.filter((f) => f.type === "PREVIOUS_EXAM");
-  const syllabi = files.filter((f) => f.type === "SYLLABUS");
 
   const courseSidebarItems = courses.map((course) => ({
     id: course.id,
-    label: `${course.icon} ${course.nameAr}`,
+    label: `${course.nameAr}`,
     icon: <span className="text-xs opacity-70 font-mono">{course.code}</span>,
   }));
 
@@ -249,7 +219,6 @@ const CourseSummariesPage: React.FC = () => {
                   className="bg-white rounded-2xl border border-gray-200 p-5 shadow-sm"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-3xl">{selectedCourse.icon}</span>
                     <div>
                       <h2 className="font-bold text-xl text-primary">
                         {selectedCourse.nameAr}

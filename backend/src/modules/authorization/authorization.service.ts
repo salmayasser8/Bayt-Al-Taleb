@@ -44,6 +44,17 @@ export class AuthorizationService {
     return false;
   }
 
+  /** Returns true if the actor may manage the given course. */
+  async canManageCourse(actor: Actor, courseId: string): Promise<boolean> {
+    if (actor.role === RoleName.SUPER_ADMIN || actor.role === RoleName.ADMIN) {
+      return true;
+    }
+    if (actor.role === RoleName.MODERATOR) {
+      return this.reader.isCourseAssigned(actor.id, courseId);
+    }
+    return false;
+  }
+
   // ── Assertion guards (throw ForbiddenError on denial) ─────────
 
   /** Throws ForbiddenError if the actor may not manage the major. */
@@ -59,6 +70,14 @@ export class AuthorizationService {
     const allowed = await this.canManageScholarship(actor, scholarshipId);
     if (!allowed) {
       throw new ForbiddenError('You do not have permission to manage this scholarship');
+    }
+  }
+
+  /** Throws ForbiddenError if the actor may not manage the course. */
+  async assertCanManageCourse(actor: Actor, courseId: string): Promise<void> {
+    const allowed = await this.canManageCourse(actor, courseId);
+    if (!allowed) {
+      throw new ForbiddenError('You do not have permission to manage this course');
     }
   }
 
@@ -79,11 +98,20 @@ export class AuthorizationService {
     if (actor.role === RoleName.MEMBER || actor.role === RoleName.VISITOR) {
       return;
     }
-    // MODERATOR — check assignment to the owning entity
+    // MODERATOR — check assignment to the owning entity.
+    // For MAJOR-owned files, also accept moderators assigned to any course under that major.
     if (ownerType === FileOwnerType.MAJOR) {
-      await this.assertCanManageMajor(actor, ownerId);
+      const direct = await this.canManageMajor(actor, ownerId);
+      if (!direct) {
+        const viaCourse = await this.reader.isAssignedToAnyCourseInMajor(actor.id, ownerId);
+        if (!viaCourse) {
+          throw new ForbiddenError('You do not have permission to manage files for this major');
+        }
+      }
     } else if (ownerType === FileOwnerType.SCHOLARSHIP) {
       await this.assertCanManageScholarship(actor, ownerId);
+    } else if (ownerType === FileOwnerType.COURSE) {
+      await this.assertCanManageCourse(actor, ownerId);
     }
   }
 }

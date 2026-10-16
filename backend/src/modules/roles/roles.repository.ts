@@ -4,7 +4,16 @@ export class RolesRepository {
   constructor(private readonly db: PrismaClient) {}
 
   async findAll(): Promise<Role[]> {
-    return this.db.role.findMany({ orderBy: { name: 'asc' } });
+    return this.db.role.findMany({
+      orderBy: { name: 'asc' },
+      include: {
+        rolePermissions: {
+          include: {
+            permission: true,
+          },
+        },
+      },
+    });
   }
 
   async findByName(name: RoleName): Promise<Role | null> {

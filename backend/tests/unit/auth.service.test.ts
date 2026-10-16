@@ -38,6 +38,8 @@ describe('AuthService', () => {
       new FakePasswordHasher(),
       new FakeTokenService(),
       7 * 24 * 60 * 60 * 1000,
+      {} as any,
+      { sendOtpCode: async () => {} } as any,
     );
   });
 
@@ -80,6 +82,7 @@ describe('AuthService', () => {
     it('returns tokens for valid credentials', async () => {
       vi.mocked(repo.findUserByEmail).mockResolvedValue(withRole());
       const result = await service.login({ email: 'student@example.com', password: 'password123' });
+      if (result.requiresTwoFactor) throw new Error('2FA not expected');
       expect(result.user.role).toBe(RoleName.MEMBER);
       expect(result.tokens.refreshToken).toContain('refresh.');
     });

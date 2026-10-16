@@ -1,6 +1,5 @@
 import React from "react";
 import { motion, Variants } from "framer-motion";
-import { CiMoneyBill } from "react-icons/ci";
 
 const fadeUp: Variants = {
   hidden: { opacity: 0, y: 20 },

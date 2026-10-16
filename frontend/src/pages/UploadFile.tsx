@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
 import { Link } from "react-router-dom";
 import {
@@ -11,111 +11,18 @@ import {
 } from "react-icons/fi";
 import { IoChevronBack } from "react-icons/io5";
 import Button from "@/components/common/Button";
+import { useToast } from "@/hooks/use-toast";
+import api from "@/api/axios";
+import { FaCheck } from "react-icons/fa";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
+
+type UploadState = "idle" | "uploading" | "success" | "error";
 
 interface SelectOption {
   value: string;
   label: string;
 }
-
-type UploadState = "idle" | "uploading" | "success" | "error";
-
-// ── Mock Data ─────────────────────────────────────────────────────────────────
-// TODO: استبدل بـ API calls حقيقية لما يجهز الباك:
-//   mockColleges       → GET /api/colleges
-//   mockMajorsByCollege → GET /api/majors?college=:id
-//   mockCoursesByMajor  → GET /api/courses?major=:id
-
-const mockColleges: SelectOption[] = [
-  { value: "medicine", label: "الطب والصحة" },
-  { value: "engineering", label: "الهندسة" },
-  { value: "cs", label: "علوم الحاسوب" },
-  { value: "law", label: "الحقوق" },
-  { value: "business", label: "اقتصاد وإدارة الأعمال" },
-  { value: "science", label: "العلوم الطبيعية" },
-  { value: "arts", label: "الفنون والتصميم" },
-  { value: "education", label: "التربية" },
-];
-
-const mockMajorsByCollege: Record<string, SelectOption[]> = {
-  medicine: [
-    { value: "general-medicine", label: "الطب العام" },
-    { value: "nursing", label: "التمريض" },
-    { value: "pharmacy", label: "الصيدلة" },
-    { value: "dentistry", label: "طب الأسنان" },
-    { value: "physiotherapy", label: "العلاج الطبيعي" },
-  ],
-  engineering: [
-    { value: "civil", label: "الهندسة المدنية" },
-    { value: "electrical", label: "الهندسة الكهربائية" },
-    { value: "mechanical", label: "الهندسة الميكانيكية" },
-    { value: "chemical", label: "الهندسة الكيميائية" },
-  ],
-  cs: [
-    { value: "cs-major", label: "علوم الحاسوب" },
-    { value: "software", label: "هندسة البرمجيات" },
-    { value: "ai", label: "الذكاء الاصطناعي" },
-    { value: "networks", label: "الشبكات والأمن" },
-  ],
-  law: [
-    { value: "private-law", label: "القانون الخاص" },
-    { value: "public-law", label: "القانون العام" },
-    { value: "international", label: "القانون الدولي" },
-  ],
-  business: [
-    { value: "accounting", label: "المحاسبة" },
-    { value: "finance", label: "التمويل" },
-    { value: "marketing", label: "التسويق" },
-    { value: "management", label: "إدارة الأعمال" },
-  ],
-  science: [
-    { value: "biology", label: "الأحياء" },
-    { value: "chemistry", label: "الكيمياء" },
-    { value: "physics", label: "الفيزياء" },
-    { value: "math", label: "الرياضيات" },
-  ],
-  arts: [
-    { value: "graphic", label: "التصميم الجرافيكي" },
-    { value: "architecture", label: "العمارة" },
-  ],
-  education: [
-    { value: "primary", label: "التعليم الابتدائي" },
-    { value: "secondary", label: "التعليم الثانوي" },
-  ],
-};
-
-const mockCoursesByMajor: Record<string, SelectOption[]> = {
-  "general-medicine": [
-    { value: "anatomy", label: "علم التشريح" },
-    { value: "physiology", label: "علم وظائف الأعضاء" },
-    { value: "biochem", label: "الكيمياء الحيوية" },
-    { value: "pathology", label: "علم الأمراض" },
-    { value: "pharmacology", label: "علم الأدوية" },
-  ],
-  nursing: [
-    { value: "nursing-basics", label: "أساسيات التمريض" },
-    { value: "adult-care", label: "رعاية البالغين" },
-  ],
-  pharmacy: [
-    { value: "organic-chem", label: "الكيمياء العضوية" },
-    { value: "pharmaceutics", label: "الصيدلانيات" },
-  ],
-  "cs-major": [
-    { value: "data-structures", label: "هياكل البيانات" },
-    { value: "algorithms", label: "الخوارزميات" },
-    { value: "os", label: "أنظمة التشغيل" },
-    { value: "databases", label: "قواعد البيانات" },
-  ],
-  software: [
-    { value: "software-eng", label: "هندسة البرمجيات" },
-    { value: "web-dev", label: "تطوير الويب" },
-  ],
-  accounting: [
-    { value: "financial-acc", label: "المحاسبة المالية" },
-    { value: "cost-acc", label: "محاسبة التكاليف" },
-  ],
-};
 
 const ACCEPTED_TYPES = [
   "application/pdf",
@@ -133,59 +40,31 @@ const fadeUp: Variants = {
   visible: { opacity: 1, y: 0, transition: { duration: 0.5 } },
 };
 
-// ── uploadFile service ────────────────────────────────────────────────────────
-// الفنكشن دي هي اللي هتتغير لما يجهز الباك.
-// دلوقتي بتعمل simulate للـ upload بـ Promise،
-// لما يجهز الـ API استبدلي الجوّه بـ fetch حقيقي.
+// ── Safe data extractor (same pattern used everywhere else) ──────────────────
 
-async function uploadFileToServer(
-  file: File,
-  college: string,
-  major: string,
-  course: string,
-  description: string,
-  onProgress: (pct: number) => void
-): Promise<void> {
-  // ──────────────────────────────────────────────────────────────────
-  // TODO: لما يجهز الباك، احذفي الـ simulation دي واستبدليها بالكود ده:
-  //
-  // const formData = new FormData();
-  // formData.append("file", file);
-  // formData.append("college", college);
-  // formData.append("major", major);
-  // formData.append("course", course);
-  // formData.append("description", description);
-  //
-  // const res = await fetch("/api/files/upload", {
-  //   method: "POST",
-  //   headers: { Authorization: `Bearer ${localStorage.getItem("token")}` },
-  //   body: formData,
-  // });
-  //
-  // if (!res.ok) throw new Error("فشل رفع الملف");
-  // ──────────────────────────────────────────────────────────────────
-
-  // Simulation مؤقتة — بتحاكي upload حقيقي بـ progress
-  return new Promise((resolve) => {
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      onProgress(Math.min(progress, 100));
-      if (progress >= 100) {
-        clearInterval(interval);
-        resolve();
-      }
-    }, 150);
-  });
-}
+const extractList = (data: any): any[] => {
+  if (Array.isArray(data?.items)) return data.items;
+  if (Array.isArray(data?.data?.items)) return data.data.items;
+  if (Array.isArray(data?.data)) return data.data;
+  if (Array.isArray(data)) return data;
+  return [];
+};
 
 // ── Component ─────────────────────────────────────────────────────────────────
 
 const UploadFile: React.FC = () => {
+  const { toast } = useToast();
+
+  const [colleges, setColleges] = useState<SelectOption[]>([]);
+  const [majors, setMajors] = useState<SelectOption[]>([]);
+  const [courses, setCourses] = useState<SelectOption[]>([]);
+
   const [selectedCollege, setSelectedCollege] = useState("");
   const [selectedMajor, setSelectedMajor] = useState("");
   const [selectedCourse, setSelectedCourse] = useState("");
+  const [fileType, setFileType] = useState("");
   const [description, setDescription] = useState("");
+
   const [file, setFile] = useState<File | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const [uploadState, setUploadState] = useState<UploadState>("idle");
@@ -194,23 +73,68 @@ const UploadFile: React.FC = () => {
   const [serverError, setServerError] = useState("");
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const availableMajors = selectedCollege
-    ? mockMajorsByCollege[selectedCollege] ?? []
-    : [];
-  const availableCourses = selectedMajor
-    ? mockCoursesByMajor[selectedMajor] ?? []
-    : [];
+  // ── Fetching Data ─────────────────────────────────────────────────────────
 
-  const handleCollegeChange = (v: string) => {
-    setSelectedCollege(v);
+  useEffect(() => {
+    const fetchColleges = async () => {
+      try {
+        const res = await api.get("/colleges");
+        const list = extractList(res.data);
+        setColleges(list.map((c: any) => ({ value: c.id, label: c.name })));
+      } catch {
+        toast({
+          variant: "destructive",
+          title: "خطأ",
+          description: "فشل تحميل الكليات",
+        });
+      }
+    };
+    fetchColleges();
+  }, []);
+
+  const handleCollegeChange = async (collegeId: string) => {
+    setSelectedCollege(collegeId);
     setSelectedMajor("");
     setSelectedCourse("");
+    setMajors([]);
+    setCourses([]);
+    if (!collegeId) return;
+
+    try {
+      const res = await api.get(`/colleges/${collegeId}/majors`);
+      const list = extractList(res.data);
+      setMajors(list.map((m: any) => ({ value: m.id, label: m.name })));
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل تحميل التخصصات",
+      });
+    }
   };
 
-  const handleMajorChange = (v: string) => {
-    setSelectedMajor(v);
+  const handleMajorChange = async (majorId: string) => {
+    setSelectedMajor(majorId);
     setSelectedCourse("");
+    setCourses([]);
+    if (!majorId) return;
+
+    try {
+      const res = await api.get(`/majors/${majorId}/courses`);
+      const list = extractList(res.data);
+      setCourses(
+        list.map((c: any) => ({ value: c.id, label: c.nameAr || c.name })),
+      );
+    } catch {
+      toast({
+        variant: "destructive",
+        title: "خطأ",
+        description: "فشل تحميل المواد",
+      });
+    }
   };
+
+  // ── File Handling ─────────────────────────────────────────────────────────
 
   const validateFile = (f: File): string => {
     if (!ACCEPTED_TYPES.includes(f.type))
@@ -244,15 +168,20 @@ const UploadFile: React.FC = () => {
   };
 
   const formatSize = (bytes: number) => {
-    if (bytes < 1024 * 1024)
-      return `${(bytes / 1024).toFixed(1)} كيلوبايت`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} كيلوبايت`;
     return `${(bytes / (1024 * 1024)).toFixed(1)} ميجابايت`;
   };
 
   const isFormValid =
-    selectedCollege && selectedMajor && selectedCourse && file && !fileError;
+    selectedCollege &&
+    selectedMajor &&
+    selectedCourse &&
+    fileType &&
+    file &&
+    !fileError;
 
   // ── Submit ────────────────────────────────────────────────────────────────
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!isFormValid || !file) return;
@@ -261,15 +190,29 @@ const UploadFile: React.FC = () => {
     setUploadProgress(0);
     setServerError("");
 
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("title", file.name);
+    if (description) formData.append("description", description);
+    formData.append("type", fileType);
+    if (selectedCourse) {
+      formData.append("ownerType", "COURSE");
+      formData.append("ownerId", selectedCourse);
+    } else {
+      formData.append("ownerType", "MAJOR");
+      formData.append("ownerId", selectedMajor);
+    }
+
     try {
-      await uploadFileToServer(
-        file,
-        selectedCollege,
-        selectedMajor,
-        selectedCourse,
-        description,
-        (pct) => setUploadProgress(pct)
-      );
+      const interval = setInterval(() => {
+        setUploadProgress((p) => Math.min(p + 15, 85));
+      }, 300);
+      await api.post("/files", formData, {
+        headers: { "Content-Type": "multipart/form-data" },
+      });
+
+      clearInterval(interval);
+      setUploadProgress(100);
       setUploadState("success");
     } catch {
       setUploadState("error");
@@ -281,6 +224,7 @@ const UploadFile: React.FC = () => {
     setSelectedCollege("");
     setSelectedMajor("");
     setSelectedCourse("");
+    setFileType("");
     setDescription("");
     setFile(null);
     setFileError("");
@@ -291,6 +235,7 @@ const UploadFile: React.FC = () => {
   };
 
   // ── Success Screen ────────────────────────────────────────────────────────
+
   if (uploadState === "success") {
     return (
       <div className="min-h-screen bg-bgSection flex items-center justify-center px-4">
@@ -325,6 +270,7 @@ const UploadFile: React.FC = () => {
   }
 
   // ── Main Form ─────────────────────────────────────────────────────────────
+
   return (
     <div className="min-h-screen bg-bgSection">
       <div className="container py-10">
@@ -335,12 +281,18 @@ const UploadFile: React.FC = () => {
           animate="visible"
           className="flex items-center gap-2 text-sm font-semibold mb-8"
         >
-          <Link to="/" className="text-gray-400 hover:text-primary transition-colors">
+          <Link
+            to="/"
+            className="text-gray-400 hover:text-primary transition-colors"
+          >
             الرئيسية
           </Link>
           <IoChevronBack className="text-gray-400" />
-          <Link to="/dashboard" className="text-gray-400 hover:text-primary transition-colors">
-            لوحة التحكم
+          <Link
+            to="/dashboard"
+            className="text-gray-400 hover:text-primary transition-colors"
+          >
+            لوحة الطالب
           </Link>
           <IoChevronBack className="text-gray-400" />
           <span className="text-primary">رفع ملف</span>
@@ -385,8 +337,12 @@ const UploadFile: React.FC = () => {
                     onChange={(e) => handleCollegeChange(e.target.value)}
                     className="w-full appearance-none border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors bg-white text-primary font-semibold"
                   >
-                    <option value="">اختر الكلية</option>
-                    {mockColleges.map((c) => (
+                    <option value="">
+                      {colleges.length === 0
+                        ? "جاري التحميل..."
+                        : "اختر الكلية"}
+                    </option>
+                    {colleges.map((c) => (
                       <option key={c.value} value={c.value}>
                         {c.label}
                       </option>
@@ -411,8 +367,14 @@ const UploadFile: React.FC = () => {
                     disabled={!selectedCollege}
                     className="w-full appearance-none border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors bg-white text-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="">اختر التخصص</option>
-                    {availableMajors.map((m) => (
+                    <option value="">
+                      {!selectedCollege
+                        ? "اختر الكلية أولاً"
+                        : majors.length === 0
+                          ? "لا توجد تخصصات"
+                          : "اختر التخصص"}
+                    </option>
+                    {majors.map((m) => (
                       <option key={m.value} value={m.value}>
                         {m.label}
                       </option>
@@ -437,15 +399,44 @@ const UploadFile: React.FC = () => {
                     disabled={!selectedMajor}
                     className="w-full appearance-none border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors bg-white text-primary font-semibold disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    <option value="">اختر المادة</option>
-                    {availableCourses.map((c) => (
+                    <option value="">
+                      {!selectedMajor
+                        ? "اختر التخصص أولاً"
+                        : courses.length === 0
+                          ? "لا توجد مواد"
+                          : "اختر المادة"}
+                    </option>
+                    {courses.map((c) => (
                       <option key={c.value} value={c.value}>
                         {c.label}
                       </option>
                     ))}
-                    {selectedMajor && availableCourses.length === 0 && (
-                      <option value="other">أخرى</option>
-                    )}
+                  </select>
+                  <FiChevronDown
+                    size={16}
+                    className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+                  />
+                </div>
+              </div>
+
+              {/* FileType */}
+              <div className="flex flex-col gap-2">
+                <label className="font-bold text-primary text-sm">
+                  نوع الملف <span className="text-red-500">*</span>
+                </label>
+                <div className="relative">
+                  <select
+                    value={fileType}
+                    onChange={(e) => setFileType(e.target.value)}
+                    className="w-full appearance-none border border-gray-300 rounded-xl px-4 py-3 outline-none focus:border-primary transition-colors bg-white text-primary font-semibold"
+                  >
+                    <option value="">اختر نوع الملف</option>
+                    <option value="SUMMARY">ملخص شامل</option>
+                    <option value="PREVIOUS_EXAM">
+                      أسئلة وتجميعات (سابقة)
+                    </option>
+                    <option value="SYLLABUS">خطة مساق (سيلابوس)</option>
+                    <option value="OTHER">أخرى</option>
                   </select>
                   <FiChevronDown
                     size={16}
@@ -475,7 +466,10 @@ const UploadFile: React.FC = () => {
               <h2 className="font-bold text-lg text-primary">الملف</h2>
 
               <div
-                onDragOver={(e) => { e.preventDefault(); setDragOver(true); }}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDragOver(true);
+                }}
                 onDragLeave={() => setDragOver(false)}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
@@ -504,7 +498,6 @@ const UploadFile: React.FC = () => {
                 </p>
               </div>
 
-              {/* File validation error */}
               {fileError && (
                 <p className="text-red-500 text-sm font-semibold flex items-center gap-2">
                   <FiX size={14} />
@@ -512,7 +505,6 @@ const UploadFile: React.FC = () => {
                 </p>
               )}
 
-              {/* Server error */}
               {serverError && (
                 <motion.div
                   initial={{ opacity: 0, y: -6 }}
@@ -524,7 +516,6 @@ const UploadFile: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Selected file preview */}
               {file && !fileError && (
                 <motion.div
                   initial={{ opacity: 0, y: 8 }}
@@ -538,7 +529,9 @@ const UploadFile: React.FC = () => {
                     <p className="font-bold text-primary text-sm truncate">
                       {file.name}
                     </p>
-                    <p className="text-gray-400 text-xs">{formatSize(file.size)}</p>
+                    <p className="text-gray-400 text-xs">
+                      {formatSize(file.size)}
+                    </p>
                   </div>
                   <button
                     type="button"
@@ -554,7 +547,6 @@ const UploadFile: React.FC = () => {
                 </motion.div>
               )}
 
-              {/* Upload progress bar */}
               {uploadState === "uploading" && (
                 <div className="flex flex-col gap-2">
                   <div className="flex justify-between text-sm font-semibold text-primary">
@@ -604,7 +596,9 @@ const UploadFile: React.FC = () => {
                   "لا ترفع محتوى منقول من مصادر أخرى",
                 ].map((tip, i) => (
                   <li key={i} className="flex items-start gap-2">
-                    <span className="text-accent font-bold shrink-0">✓</span>
+                    <span className="text-accent font-bold shrink-0">
+                      <FaCheck size={14} className="text-accent" />
+                    </span>
                     {tip}
                   </li>
                 ))}
@@ -623,7 +617,7 @@ const UploadFile: React.FC = () => {
                   { n: "٤", text: "يُنشر الملف للطلاب بعد الاعتماد" },
                 ].map((step) => (
                   <li key={step.n} className="flex items-start gap-3">
-                    <span className="w-7 h-7 rounded-full bg-primary/10 text-primary font-bold text-sm flex items-center justify-center shrink-0">
+                    <span className="w-7 h-7 rounded-full bg-primary/10 text-accent font-bold text-md flex items-center justify-center shrink-0">
                       {step.n}
                     </span>
                     <span className="text-sm font-semibold text-gray-600 mt-0.5">

@@ -29,6 +29,32 @@ export function createReviewsRouter(
     controller.submit,
   );
 
+  // POST /approve — convenience alias
+  router.post(
+    '/approve',
+    authenticate,
+    requirePermission(PERMISSIONS.FILES_REVIEW),
+    (req, _res, next) => {
+      req.body = { action: 'APPROVE', comment: req.body?.comment ?? req.body?.reason };
+      next();
+    },
+    validate({ params: fileReviewParamsSchema, body: createReviewSchema }),
+    controller.submit,
+  );
+
+  // POST /reject — convenience alias
+  router.post(
+    '/reject',
+    authenticate,
+    requirePermission(PERMISSIONS.FILES_REVIEW),
+    (req, _res, next) => {
+      req.body = { action: 'REJECT', comment: req.body?.comment ?? req.body?.reason };
+      next();
+    },
+    validate({ params: fileReviewParamsSchema, body: createReviewSchema }),
+    controller.submit,
+  );
+
   // GET / — read the review history (audit trail) for a file.
   router.get(
     '/',

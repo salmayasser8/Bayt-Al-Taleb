@@ -23,14 +23,46 @@ export class AuthRepository {
     });
   }
 
+  async findUserByGoogleId(googleId: string): Promise<(User & { role: { name: string } }) | null> {
+    return this.db.user.findUnique({
+      where: { googleId },
+      include: { role: { select: { name: true } } },
+    }) as Promise<(User & { role: { name: string } }) | null>;
+  }
+
+  async updateUser(
+    id: string,
+    data: {
+      googleId?: string;
+      fullName?: string;
+      isActive?: boolean;
+      twoFactorSecret?: string | null;
+      twoFactorEnabled?: boolean;
+      otpExpiresAt?: Date | null;
+    },
+  ): Promise<User & { role: { name: string } }> {
+    return this.db.user.update({
+      where: { id },
+      data,
+      include: { role: { select: { name: true } } },
+    });
+  }
+
   async createUser(data: {
     email: string;
-    passwordHash: string;
+    passwordHash?: string;
     fullName: string;
     roleId: string;
+    googleId?: string;
   }): Promise<User & { role: { name: string } }> {
     return this.db.user.create({
-      data,
+      data: {
+        email: data.email,
+        passwordHash: data.passwordHash ?? null,
+        fullName: data.fullName,
+        roleId: data.roleId,
+        googleId: data.googleId ?? null,
+      },
       include: { role: { select: { name: true } } },
     });
   }

@@ -113,7 +113,11 @@ model RolePermission {
 model User {
   id           String   @id @default(cuid())
   email        String   @unique
-  passwordHash String
+  passwordHash  String?          
+  googleId      String?  @unique  
+  twoFactorSecret String?        
+  twoFactorEnabled Boolean @default(false)  
+  otpExpiresAt     DateTime?
   fullName     String
   isActive     Boolean  @default(true)
   createdAt    DateTime @default(now())
@@ -130,6 +134,7 @@ model User {
 
   assignedMajors       Major[]       @relation("MajorModerators")
   assignedScholarships Scholarship[] @relation("ScholarshipModerators")
+  assignedCourses      Course[]      @relation("CourseModerators")
 
   @@index([roleId])
   @@map("users")
@@ -207,6 +212,8 @@ model Course {
 
   majorId String
   major   Major  @relation(fields: [majorId], references: [id], onDelete: Cascade)
+
+  moderators User[] @relation("CourseModerators")
 
   @@index([majorId])
   @@map("courses")
@@ -298,7 +305,7 @@ model File {
   ownerId      String
 
   uploadedById String
-  uploadedBy   User   @relation("UploadedBy", fields: [uploadedById], references: [id])
+  uploadedBy   User   @relation("UploadedBy", fields: [uploadedById], references: [id], onDelete: Cascade)
 
   deletedAt    DateTime?
   deletedById  String?
@@ -324,7 +331,7 @@ model FileReview {
   createdAt DateTime     @default(now())
 
   file     File @relation(fields: [fileId], references: [id], onDelete: Cascade)
-  reviewer User @relation("ReviewedBy", fields: [reviewerId], references: [id])
+  reviewer User @relation("ReviewedBy", fields: [reviewerId], references: [id], onDelete: Cascade)
 
   @@index([fileId])
   @@index([reviewerId])
@@ -358,7 +365,7 @@ model AuditLog {
   metadata   Json?
   createdAt  DateTime        @default(now())
 
-  user User @relation("AuditActor", fields: [userId], references: [id])
+  user User @relation("AuditActor", fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
   @@index([entityType, entityId])

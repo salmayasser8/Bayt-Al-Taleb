@@ -15,7 +15,7 @@ export class RolesController {
   assign = asyncHandler(async (req: Request, res: Response) => {
     const { userId } = req.params as { userId: string };
     const input = req.body as AssignRoleInput;
-    await this.service.assignRole(userId, input);
+    await this.service.assignRole(userId, input.roleName);
     noContent(res);
   });
 }

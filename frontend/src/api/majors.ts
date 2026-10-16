@@ -5,13 +5,12 @@ export const getMajorById = async (id: string) => {
   return res.data;
 };
 
-// api/content.ts
-export const getMajorSections = async (majorId: string) => {
-  const res = await api.get(`/content/MAJOR/${majorId}/sections`);
+export const createMajor = async (major: any) => {
+  const res = await api.post("/majors", major);
   return res.data;
 };
 
-export const getMajorFaqs = async (majorId: string) => {
-  const res = await api.get(`/content/MAJOR/${majorId}/faqs`);
+export const getMajors = async () => {
+  const res = await api.get("/majors");
   return res.data;
 };

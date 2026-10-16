@@ -5,7 +5,7 @@ import {
   FaUserNurse,
   FaGraduationCap,
   FaClinicMedical,
-  FaChalkboardTeacher,
+  FaChalkboardTeacher, 
   FaMicroscope,
 } from "react-icons/fa";
 import { IoIosGitCompare } from "react-icons/io";

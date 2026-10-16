@@ -6,13 +6,15 @@ import type { UserDto } from './users.dto.js';
 import { ConflictError, NotFoundError } from '../../shared/errors/app-error.js';
 import type { RoleName } from '@prisma/client';
 
-/** Human-friendly role labels for role-change notifications. */
-
+export interface UserRoleNotifier {
+  notifyUser(data: { userId: string; title: string; message: string; metadata?: unknown }): Promise<void>;
+}
 
 export class UsersService {
   constructor(
     private readonly repo: UsersRepository,
     private readonly hasher: PasswordHasher,
+    private readonly notifier?: UserRoleNotifier,
   ) {}
 
   // ─── List ────────────────────────────────────────────────────
@@ -64,11 +66,38 @@ export class UsersService {
     const existing = await this.repo.findById(id);
     if (!existing) throw new NotFoundError(`User ${id} not found`);
 
+    const roleChanged = input.roleId && input.roleId !== existing.roleId;
+
     const user = await this.repo.update(id, {
       fullName: input.fullName,
       isActive: input.isActive,
       roleId:   input.roleId,
     });
+
+    if (roleChanged && this.notifier) {
+      const roleName = user.role.name;
+      const title =
+        roleName === 'MODERATOR'
+          ? 'ترقية إلى مشرف '
+          : roleName === 'ADMIN'
+            ? 'ترقية إلى مسؤول '
+            : 'تحديث الدور ';
+      const message =
+        roleName === 'MODERATOR'
+          ? 'تمت ترقية حسابك إلى مشرف (Moderator). يمكنك الآن الإشراف على المحتوى الأكاديمي ومراجعة الملفات.'
+          : roleName === 'ADMIN'
+            ? 'تمت ترقية حسابك إلى مسؤول (Admin).'
+            : `تم تعديل دور حسابك إلى ${roleName}.`;
+
+      this.notifier
+        .notifyUser({
+          userId: id,
+          title,
+          message,
+          metadata: { type: 'ROLE_CHANGED', newRole: roleName },
+        })
+        .catch(() => undefined);
+    }
 
     return this.#toDto(user);
   }

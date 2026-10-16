@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from "react";
 import { motion, Variants } from "framer-motion";
-import { Link } from "react-router-dom";
+import { Link, useSearchParams } from "react-router-dom";
 import {
   MdPayments,
   MdGavel,
@@ -36,6 +36,7 @@ const getIconByCategory = (category: string) => {
     فنون: <MdPalette size={32} />,
     هندسة: <MdEngineering size={32} />,
     علوم: <GiMicroscope size={32} />,
+    حاسبات: <MdComputer size={32} />,
   };
   return icons[category] || <MdComputer size={32} />; // Fallback icon
 };
@@ -100,10 +101,20 @@ const CollegeCard: React.FC<{ college: College }> = ({ college }) => (
 // ── Main Page Component ──────────────────────────────────────────────
 
 const CollegesPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const categoryParam = searchParams.get("category");
+
   const [colleges, setColleges] = useState<College[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeFilter, setActiveFilter] = useState("الكل");
+  const [activeFilter, setActiveFilter] = useState(categoryParam || "الكل");
+
+  // Keep activeFilter in sync if URL query param changes
+  useEffect(() => {
+    if (categoryParam) {
+      setActiveFilter(categoryParam);
+    }
+  }, [categoryParam]);
 
   // Fetch Data from API
   useEffect(() => {
@@ -131,7 +142,10 @@ const CollegesPage: React.FC = () => {
     return colleges.filter((college) => {
       const matchesSearch = college.name.includes(searchQuery);
       const matchesFilter =
-        activeFilter === "الكل" || college.category === activeFilter;
+        activeFilter === "الكل" ||
+        college.category === activeFilter ||
+        college.name.includes(activeFilter) ||
+        activeFilter.includes(college.category);
       return matchesSearch && matchesFilter;
     });
   }, [colleges, searchQuery, activeFilter]);

@@ -9,7 +9,8 @@ export const getScholarshipById = async (id: string) => {
   const res = await api.get(`/scholarships/${id}`);
   return res.data;
 };
-export const getScholarshipSections = async (id: string) => {
-  const res = await api.get(`/content/SCHOLARSHIP/${id}/sections`);
+
+export const createScholarship = async (scholarship: any) => {
+  const res = await api.post("/scholarships", scholarship);
   return res.data;
 };

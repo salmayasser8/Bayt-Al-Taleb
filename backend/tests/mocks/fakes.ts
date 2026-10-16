@@ -164,12 +164,16 @@ export function makeAudit(): { audit: AuditService; auditRepo: { create: ReturnT
 export function makeAuthz(opts: {
   majors?: Set<string>;
   scholarships?: Set<string>;
+  courses?: Set<string>;
 } = {}): AuthorizationService {
   const majors = opts.majors ?? new Set<string>();
   const scholarships = opts.scholarships ?? new Set<string>();
+  const courses = opts.courses ?? new Set<string>();
   const reader: AssignmentReader = {
     isMajorAssigned: async (_userId, majorId) => majors.has(majorId),
     isScholarshipAssigned: async (_userId, scholarshipId) => scholarships.has(scholarshipId),
+    isCourseAssigned: async (_userId, courseId) => courses.has(courseId),
+    isAssignedToAnyCourseInMajor: async (_userId, _majorId) => false,
   };
   return new AuthorizationService(reader);
 }

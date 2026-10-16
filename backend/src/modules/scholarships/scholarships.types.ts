@@ -12,14 +12,14 @@ export interface ScholarshipView {
 export interface CreateScholarshipData {
   slug: string;
   name: string;
-  startDate?: Date | null;
-  endDate?: Date | null;
+  startDate: Date;
+  endDate: Date;
 }
 
 export interface UpdateScholarshipData {
   slug?: string;
   name?: string;
   isActive?: boolean;
-  startDate?: Date | null;
-  endDate?: Date | null;
+  startDate?: Date;
+  endDate?: Date;
 }
