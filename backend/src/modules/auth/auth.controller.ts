@@ -17,6 +17,7 @@ import type { AuthService } from './auth.service.js';
 import type { RegisterInput, LoginInput, RefreshInput, LogoutInput } from './auth.validation.js';
 import { created, ok, noContent } from '../../shared/utils/http-response.js';
 import { asyncHandler } from '../../shared/utils/async-handler.js';
+import { env } from '../../config/env.js';
 import type { AuthResponseDto } from './auth.dto.js';
 
 /**
@@ -104,6 +105,6 @@ export class AuthController {
       refreshToken: result.tokens.refreshToken,
     });
 
-    res.redirect(`http://localhost:5173/auth/callback?${params.toString()}`);
+    res.redirect(`${env.FRONTEND_URL}/auth/callback?${params.toString()}`);
   });
 }

@@ -476,7 +476,10 @@ const AuthPage: React.FC = () => {
                     <motion.button
                       type="button"
                       onClick={() => {
-                        window.location.href = "http://localhost:4001/api/v1/auth/google";
+                        window.location.href = `${
+                          import.meta.env.VITE_API_BASE_URL ||
+                          "http://localhost:4001/api/v1"
+                        }/auth/google`;
                       }}
                       whileHover={{ scale: 1.02 }}
                       whileTap={{ scale: 0.98, transition: { duration: 0.1 } }}

@@ -34,6 +34,9 @@ const envSchema = z.object({
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CALLBACK_URL: z.string().url(),
 
+  // Where the frontend lives (Google login sends the user back here)
+  FRONTEND_URL: z.string().url().default('http://localhost:5173'),
+
   // SMTP (email sending) — all optional: when SMTP_HOST is empty,
   // the mailer runs in console mode (OTP printed to terminal).
   SMTP_HOST: z.string().default(''),
