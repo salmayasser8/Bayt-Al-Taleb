@@ -43,10 +43,11 @@ export class EmailService implements OtpMailer {
   </div>`;
 
   if (!this.transporter) {
-    console.info(`[OTP] Send code ${code} to ${to} (${purpose})`);
+    console.info(`[OTP] CONSOLE MODE — code ${code} for ${to} (${purpose})`);
     return;
   }
 
+  console.info(`[OTP] SMTP MODE — sending real email to ${to} (${purpose})`);
   await this.transporter.sendMail({
     from: this.from,
     to,

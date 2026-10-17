@@ -512,7 +512,7 @@ const ProfilePage: React.FC = () => {
                 <Button
                   onClick={onDisableTwoFa}
                   disabled={twoFaFlow === "disabling"}
-                  className="w-full bg-red-50 text-red-600 border border-red-200 hover:bg-red-100"
+                  className="w-full"
                 >
                   {twoFaFlow === "disabling"
                     ? "جاري الإلغاء..."

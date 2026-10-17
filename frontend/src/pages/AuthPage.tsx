@@ -9,6 +9,8 @@ import { GiGraduateCap } from "react-icons/gi";
 import { useToast } from "@/hooks/use-toast";
 import { loginApi, registerApi, verifyOtpApi } from "@/api/auth";
 import { useAuth } from "@/store/AuthContext";
+import { FaEye, FaEyeSlash } from "react-icons/fa";
+
 const loginSchema = z.object({
   email: z
     .string()
@@ -80,6 +82,7 @@ const AuthPage: React.FC = () => {
   const [otpTempToken, setOtpTempToken] = useState<string | null>(null);
   const [otpCode, setOtpCode] = useState("");
   const [otpSubmitting, setOtpSubmitting] = useState(false);
+  const[showPassword,setShowPassword]=useState(false);
   const { toast } = useToast();
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -313,14 +316,35 @@ const AuthPage: React.FC = () => {
                       registration={registerLogin("email")}
                     />
 
-                    <InputField
-                      label="كلمة المرور"
-                      type="password"
-                      placeholder="••••••••"
-                      error={loginErrors.password?.message}
-                      registration={registerLogin("password")}
-                    />
-
+                    <div className="flex flex-col gap-2">
+                      <label className="font-semibold text-primary text-sm">
+                        كلمة المرور
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className={`w-full border rounded-xl px-4 py-3 pl-11 outline-none transition-colors bg-bgSection text-primary placeholder:text-gray-400 ${
+                            loginErrors.password?.message
+                              ? "border-red-400 focus:border-red-400"
+                              : "border-gray-300 focus:border-primary"
+                          }`}
+                          {...registerLogin("password")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary cursor-pointer"
+                        >
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                      </div>
+                      {loginErrors.password?.message && (
+                        <p className="text-red-400 text-xs">
+                          {loginErrors.password?.message}
+                        </p>
+                      )}
+                    </div>
                     <Link
                       to="#"
                       className="w-fit text-primary text-sm font-semibold no-underline hover:text-accent transition-colors"
@@ -370,21 +394,64 @@ const AuthPage: React.FC = () => {
                       registration={registerSignup("email")}
                     />
 
-                    <InputField
-                      label="كلمة المرور"
-                      type="password"
-                      placeholder="••••••••"
-                      error={registerErrors.password?.message}
-                      registration={registerSignup("password")}
-                    />
-
-                    <InputField
-                      label="تأكيد كلمة المرور"
-                      type="password"
-                      placeholder="••••••••"
-                      error={registerErrors.confirmPassword?.message}
-                      registration={registerSignup("confirmPassword")}
-                    />
+                    <div className="flex flex-col gap-2">
+                      <label className="font-semibold text-primary text-sm">
+                        كلمة المرور
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className={`w-full border rounded-xl px-4 py-3 pl-11 outline-none transition-colors bg-bgSection text-primary placeholder:text-gray-400 ${
+                            registerErrors.password?.message
+                              ? "border-red-400 focus:border-red-400"
+                              : "border-gray-300 focus:border-primary"
+                          }`}
+                          {...registerSignup("password")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary cursor-pointer"
+                        >
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                      </div>
+                      {registerErrors.password?.message && (
+                        <p className="text-red-400 text-xs">
+                          {registerErrors.password?.message}
+                        </p>
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-2">
+                      <label className="font-semibold text-primary text-sm">
+                        تأكيد كلمة المرور
+                      </label>
+                      <div className="relative">
+                        <input
+                          type={showPassword ? "text" : "password"}
+                          placeholder="••••••••"
+                          className={`w-full border rounded-xl px-4 py-3 pl-11 outline-none transition-colors bg-bgSection text-primary placeholder:text-gray-400 ${
+                            registerErrors.confirmPassword?.message
+                              ? "border-red-400 focus:border-red-400"
+                              : "border-gray-300 focus:border-primary"
+                          }`}
+                          {...registerSignup("confirmPassword")}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => setShowPassword(!showPassword)}
+                          className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-primary cursor-pointer"
+                        >
+                          {showPassword ? <FaEyeSlash /> : <FaEye />}
+                        </button>
+                      </div>
+                      {registerErrors.confirmPassword?.message && (
+                        <p className="text-red-400 text-xs">
+                          {registerErrors.confirmPassword?.message}
+                        </p>
+                      )}
+                    </div>
 
                     <motion.button
                       type="submit"

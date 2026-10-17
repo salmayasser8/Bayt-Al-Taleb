@@ -33,6 +33,14 @@ const envSchema = z.object({
   GOOGLE_CLIENT_ID: z.string().min(1),
   GOOGLE_CLIENT_SECRET: z.string().min(1),
   GOOGLE_CALLBACK_URL: z.string().url(),
+
+  // SMTP (email sending) — all optional: when SMTP_HOST is empty,
+  // the mailer runs in console mode (OTP printed to terminal).
+  SMTP_HOST: z.string().default(''),
+  SMTP_PORT: z.coerce.number().int().default(587),
+  SMTP_USER: z.string().default(''),
+  SMTP_PASS: z.string().default(''),
+  MAIL_FROM: z.string().default('Bayt Al Taleb <no-reply@example.com>'),
 });
 
 export type Env = z.infer<typeof envSchema>;
