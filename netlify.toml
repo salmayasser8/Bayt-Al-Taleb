@@ -1,0 +1,26 @@
+# Netlify configuration — one site hosts BOTH the React frontend
+# and the Express backend (as a serverless function).
+
+[build]
+  publish = "frontend/dist"
+  # 1. Build the React app. 2. Compile the backend. 3. Copy the compiled
+  # backend + its node_modules next to the function so it can run inside it.
+  command = "cd frontend && npm ci && npm run build && cd ../backend && npm ci && npm run build && rm -rf ../netlify/functions/api/dist ../netlify/functions/api/node_modules && mkdir -p ../netlify/functions/api && cp -r dist ../netlify/functions/api/dist && cp -r node_modules ../netlify/functions/api/node_modules"
+
+[functions]
+  # "zisi" bundles the function folder as-is (dist + node_modules included)
+  node_bundler = "zisi"
+
+# The browser talks to /api/v1 — Netlify passes it to the function
+[[redirects]]
+  from = "/api/v1/*"
+  to = "/.netlify/functions/api/:splat"
+  status = 200
+  force = true
+
+# Health endpoint of the backend
+[[redirects]]
+  from = "/health"
+  to = "/.netlify/functions/api/health"
+  status = 200
+  force = true
