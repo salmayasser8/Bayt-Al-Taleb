@@ -5,7 +5,9 @@
   publish = "frontend/dist"
   # 1. Build the React app. 2. Compile the backend. 3. Copy the compiled
   # backend + its node_modules next to the function so it can run inside it.
-  command = "cd frontend && npm ci && npm run build && cd ../backend && npm ci && npm run build && rm -rf ../netlify/functions/api/dist ../netlify/functions/api/node_modules && mkdir -p ../netlify/functions/api && cp -r dist ../netlify/functions/api/dist && cp -r node_modules ../netlify/functions/api/node_modules"
+  # --include=dev: NODE_ENV=production makes npm skip devDependencies
+  # (vite, tsc...) — both BUILD tools need them, so force-install them.
+  command = "cd frontend && npm ci --include=dev && npm run build && cd ../backend && npm ci --include=dev && npm run build && rm -rf ../netlify/functions/api/dist ../netlify/functions/api/node_modules && mkdir -p ../netlify/functions/api && cp -r dist ../netlify/functions/api/dist && cp -r node_modules ../netlify/functions/api/node_modules"
 
 [functions]
   # "zisi" bundles the function folder as-is (dist + node_modules included)
