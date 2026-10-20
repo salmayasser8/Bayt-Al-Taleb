@@ -8,9 +8,8 @@
     },
     "backend": {
       "root": "backend",
-      "installCommand": "npm ci --include=dev",
-      "buildCommand": "npx esbuild api/index.ts --bundle --platform=node --packages=external --outfile=api/index.cjs",
       "entrypoint": "api/index.cjs",
+      "installCommand": "npm ci --include=dev",
       "functions": {
         "api/index.cjs": {
           "includeFiles": "node_modules/.prisma/**"
