@@ -13,7 +13,7 @@
       "installCommand": "npm ci --include=dev",
       "functions": {
         "api/index.ts": {
-          "includeFiles": ["node_modules/.prisma/**", "node_modules/@prisma/engines/**"]
+          "includeFiles": "node_modules/.prisma/**"
         }
       }
     }
