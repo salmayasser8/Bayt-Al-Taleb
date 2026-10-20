@@ -7,6 +7,9 @@ node_modules/
 dist/
 build/
 
+# Vercel esbuild bundle (generated at build time)
+backend/api/index.cjs
+
 # Test / coverage
 coverage/
 
