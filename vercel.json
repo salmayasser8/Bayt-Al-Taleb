@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "installCommand": "echo \"installs happen inside buildCommand\"",
+  "buildCommand": "cd frontend && npm ci --include=dev && npm run build && cd ../backend && npm ci --include=dev",
+  "outputDirectory": "frontend/dist",
+  "functions": {
+    "backend/api/index.ts": {
+      "includeFiles": ["backend/node_modules/.prisma/**", "backend/node_modules/@prisma/engines/**"]
+    }
+  },
+  "rewrites": [
+    { "source": "/api/v1/(.*)", "destination": "backend/api/index" },
+    { "source": "/health", "destination": "backend/api/index" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}
