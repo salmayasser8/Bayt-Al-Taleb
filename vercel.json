@@ -8,13 +8,7 @@
     },
     "backend": {
       "root": "backend",
-      "entrypoint": "api/index.cjs",
-      "installCommand": "npm ci --include=dev",
-      "functions": {
-        "api/index.cjs": {
-          "includeFiles": "node_modules/.prisma/**"
-        }
-      }
+      "entrypoint": "Dockerfile.vercel"
     }
   },
   "rewrites": [

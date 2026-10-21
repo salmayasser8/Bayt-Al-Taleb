@@ -1,0 +1,21 @@
+# Vercel Container Runtime — backend image.
+# Vercel builds this with Docker and runs it as a long-lived Node server.
+# It injects PORT (default 80), DATABASE_URL, and every env var set in the
+# project's Environment Variables — our server listens on env.PORT already.
+
+FROM node:20-slim
+
+WORKDIR /app
+
+# Copy the source (node_modules/.env/dist/uploads/junk excluded via .dockerignore)
+COPY . .
+
+# Install everything (dev deps needed for the TS build + prisma generate),
+# generate the Prisma client (postinstall does it), compile to dist/
+RUN npm ci --include=dev && npm run build
+
+ENV NODE_ENV=production
+ENV PORT=80
+
+# Plain HTTP server listening on $PORT — Vercel routes external traffic to it.
+CMD ["node", "dist/src/server.js"]
